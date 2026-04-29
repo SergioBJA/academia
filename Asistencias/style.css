@@ -1,0 +1,183 @@
+:root {
+    --brand-blue: #163675;
+    --brand-red: #cc0000;
+    --brand-gray: #64748b;
+
+    --primary: var(--brand-blue);
+    --primary-hover: #0f2757;
+    --primary-light: #f1f5f9;
+    --secondary: #0ea5e9;
+    --success: #10b981;
+    --danger: var(--brand-red);
+    --warning: #f59e0b;
+    --bg-main: #f8fafc;
+    --bg-card: rgba(255, 255, 255, 0.8);
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --radius-lg: 1rem;
+    --radius-md: 0.75rem;
+    --shadow-premium: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+
+    --glass-bg: rgba(255, 255, 255, 0.8);
+    --glass-border: rgba(255, 255, 255, 0.3);
+}
+
+:root.dark {
+    --bg-main: #020617;
+    --bg-card: rgba(15, 23, 42, 0.8);
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --brand-blue: #38bdf8;
+    --primary: #38bdf8;
+    --primary-hover: #7dd3fc;
+    --glass-bg: rgba(15, 23, 42, 0.8);
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+body {
+    transition: background 0.5s ease;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-premium);
+    border-radius: var(--radius-lg);
+}
+
+.dark .glass-card {
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
+.premium-input {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.premium-input:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px -2px rgba(79, 70, 229, 0.1);
+}
+
+.btn-premium {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-premium:active {
+    transform: scale(0.96);
+}
+
+.animate-in {
+    animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Table Enhancements */
+.premium-table thead th {
+    background: #f1f5f9;
+    text-transform: uppercase;
+    font-size: 0.65rem;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+}
+
+.status-dot-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.status-dot-container:hover {
+    background: rgba(0,0,0,0.03);
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-bottom: 2px;
+}
+
+.status-label {
+    font-size: 8px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.summary-month-badge {
+    background: linear-gradient(135deg, #163675 0%, #1a365d 100%);
+    color: white;
+    padding: 0.5rem 1.25rem;
+    border-radius: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 12px;
+    box-shadow: 0 4px 12px rgba(22, 54, 117, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dark .summary-month-badge {
+    background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
+    color: #020617;
+    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
+}
+
+.summary-month-badge.current {
+    background: linear-gradient(135deg, #cc0000 0%, #990000 100%);
+    box-shadow: 0 4px 12px rgba(204, 0, 0, 0.2);
+}
+
+.dark .summary-month-badge.current {
+    background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+    color: #ffffff;
+}
+
+.bg-split-ra {
+    background: linear-gradient(90deg, #10b981 50%, #6366f1 50%) !important;
+}
+
+.vertical-text {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+}

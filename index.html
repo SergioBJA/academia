@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Academia | Portal Unificado</title>
+    <link rel="icon" type="image/png" href="img/logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            blue: '#163675',
+                            red: '#cc0000',
+                            gray: '#64748b'
+                        }
+                    },
+                    animation: {
+                        'gradient-x': 'gradient-x 3s ease infinite',
+                        'fade-in': 'fadeIn 0.5s ease-out forwards'
+                    },
+                    keyframes: {
+                        'gradient-x': {
+                            '0%, 100%': { 'background-position': '0% 50%' },
+                            '50%': { 'background-position': '100% 50%' }
+                        },
+                        'fadeIn': {
+                            'from': { opacity: '0', transform: 'translateY(10px)' },
+                            'to': { opacity: '1', transform: 'translateY(0)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="config.js"></script>
+    <script src="theme-manager.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://accounts.google.com/gsi/client"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="google-auth-central.js?v=8"></script>
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .animate-gradient-x {
+            background-size: 200% auto;
+            animation: gradient-x 3s linear infinite;
+        }
+
+        @keyframes gradient-x {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        }
+
+        .module-card {
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+        }
+
+        .module-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .bg-gradient-custom {
+            background: radial-gradient(circle at top left, #f8fafc, #eff6ff);
+        }
+        
+        .dark .bg-gradient-custom {
+            background: radial-gradient(circle at top left, #020617, #0f172a);
+        }
+
+        .bg-blob {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(135deg, #3b82f633 0%, #2dd4bf33 100%);
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+        }
+
+        [x-cloak] {
+            display: none !important;
+        }
+
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 10px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            font-weight: 700;
+            z-index: 50;
+        }
+
+        .tooltip:hover::after {
+            opacity: 1;
+            visibility: visible;
+            bottom: 140%;
+        }
+
+        /* Corregir desaparición de iconos en hover */
+        .module-card:hover .icon-box-blue { background-color: #163675 !important; }
+        .module-card:hover .icon-box-blue svg { color: white !important; }
+        
+        .module-card:hover .icon-box-red { background-color: #cc0000 !important; }
+        .module-card:hover .icon-box-red svg { color: white !important; }
+        
+        .module-card:hover .icon-box-slate { background-color: #1e293b !important; }
+        .module-card:hover .icon-box-slate svg { color: white !important; }
+        
+        .module-card:hover .icon-box-emerald { background-color: #10b981 !important; }
+        .module-card:hover .icon-box-emerald svg { color: white !important; }
+
+        .module-card:hover .icon-box-amber { background-color: #d97706 !important; }
+        .module-card:hover .icon-box-amber svg { color: white !important; }
+    </style>
+</head>
+
+<body class="bg-gradient-custom min-h-screen relative overflow-x-hidden text-slate-800 dark:text-slate-100 transition-colors duration-500" x-data="authApp()" x-cloak>
+    <div class="bg-blob top-[-100px] left-[-100px]"></div>
+    <div class="bg-blob bottom-[-100px] right-[-100px] animate-pulse"></div>
+
+    <!-- PANTALLA DE LOGIN GLOBAL -->
+    <div x-show="!isGlobalLoggedIn" class="min-h-screen flex items-center justify-center px-4 relative z-50">
+        <div class="glass-card w-full max-w-sm rounded-[2.5rem] p-10 relative z-10 border border-white overflow-hidden shadow-2xl">
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-brand-blue to-brand-red"></div>
+            
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-brand-blue/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <img src="img/logo.png" alt="Logo" class="h-12 object-contain">
+                </div>
+                <h2 class="text-3xl font-black text-slate-900 tracking-tight">Acceso</h2>
+                <p class="text-slate-500 text-sm mt-2 font-medium">Introduce tus credenciales</p>
+            </div>
+
+            <form @submit.prevent="performGlobalLogin" class="space-y-5">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-brand-blue transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    </div>
+                    <input type="text" x-model="loginUsername" placeholder="Usuario" autofocus
+                        class="w-full bg-slate-50/50 border border-slate-200 rounded-2xl pl-12 pr-5 py-4 font-bold text-slate-700 outline-none focus:ring-4 focus:ring-brand-blue/10 focus:border-brand-blue/30 transition-all placeholder:text-slate-400 placeholder:font-medium">
+                </div>
+                
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-brand-blue transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    </div>
+                    <input :type="showPassword ? 'text' : 'password'" x-model="loginPassword" placeholder="Contraseña"
+                        class="w-full bg-slate-50/50 border border-slate-200 rounded-2xl pl-12 pr-12 py-4 font-bold text-slate-700 outline-none focus:ring-4 focus:ring-brand-blue/10 focus:border-brand-blue/30 transition-all placeholder:text-slate-400 placeholder:font-medium">
+                    
+                    <!-- Toggle Visibility Button -->
+                    <button type="button" @click="showPassword = !showPassword" 
+                        class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-brand-blue transition-colors outline-none focus:text-brand-blue">
+                        <template x-if="!showPassword">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </template>
+                        <template x-if="showPassword">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
+                        </template>
+                    </button>
+                </div>
+                
+                <div x-show="loginError" x-transition class="bg-rose-50 border border-rose-100 rounded-lg p-3">
+                    <p class="text-rose-600 text-xs font-bold text-center" x-text="loginError"></p>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" :disabled="isLoggingIn"
+                        class="w-full bg-slate-900 hover:bg-brand-blue text-white py-4 rounded-xl font-black text-sm uppercase tracking-widest shadow-xl shadow-slate-200 hover:shadow-brand-blue/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                        <span x-show="!isLoggingIn">Entrar al Portal</span>
+                        <svg x-show="isLoggingIn" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </form>
+            
+            <div class="mt-8 text-center">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-60">Admin Academia &copy; 2026</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTENIDO PRINCIPAL DEL PORTAL -->
+    <div x-show="isGlobalLoggedIn" x-transition.opacity.duration.500ms class="max-w-6xl mx-auto px-4 py-12 sm:py-20 text-slate-800 relative">
+        
+        <!-- Controles de sesión - Esquina superior derecha -->
+        <div class="absolute top-4 right-4 sm:top-6 sm:right-6 flex flex-col sm:flex-row items-end sm:items-center gap-3 z-50">
+            <!-- Google Login Centralizado -->
+            <div class="glass-card flex items-center gap-2 p-1 rounded-2xl border border-slate-200/50 shadow-sm transition-all origin-top-right scale-[0.85] sm:scale-100 hover:shadow-md">
+                <button @click="GoogleAuthCentral.connect()" x-show="!isGoogleConnected"
+                    class="group flex items-center gap-2 bg-white border border-slate-100 px-4 py-2 rounded-xl text-xs font-black hover:border-brand-blue transition-all duration-300">
+                    <div class="w-5 h-5 flex items-center justify-center bg-slate-50 rounded p-0.5 group-hover:bg-brand-blue/10 transition-colors">
+                        <svg viewBox="0 0 24 24" class="w-full h-full">
+                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                        </svg>
+                    </div>
+                    <span class="text-slate-700 uppercase tracking-tight">Google</span>
+                </button>
+
+                <div x-show="isGoogleConnected" class="w-fit inline-flex items-center bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                    <div class="px-3 py-2 bg-emerald-50 text-emerald-700 text-xs font-black border-r border-slate-100 flex items-center gap-2">
+                        <div class="relative">
+                            <div class="w-2 h-2 bg-emerald-500 rounded-full animate-ping absolute inset-0 opacity-20"></div>
+                            <div class="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                        </div>
+                        <div class="flex flex-col items-start leading-none gap-0.5">
+                            <span class="uppercase tracking-widest text-[8px] opacity-60">Sincronizado</span>
+                            <span x-text="googleUserEmail" class="text-[10px]"></span>
+                        </div>
+                    </div>
+                    <button @click="GoogleAuthCentral.logout()" class="px-3 py-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all text-[10px] font-black uppercase tracking-widest flex items-center gap-1 border-l border-slate-100">
+                        Desconectar
+                    </button>
+                </div>
+            </div>
+            
+            <div class="glass-card p-1 rounded-2xl border border-slate-200/50 dark:border-white/10 shadow-sm inline-flex items-center transition-all origin-top-right scale-[0.85] sm:scale-100 hover:shadow-md">
+                <button @click="toggleTheme()" class="w-10 h-10 flex items-center justify-center bg-white dark:bg-slate-800 rounded-xl text-slate-600 dark:text-amber-400 hover:text-brand-blue dark:hover:text-amber-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-300 shadow-inner">
+                    <!-- Sun Icon (Show in Dark Mode) -->
+                    <svg x-show="isDarkMode" class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.364 17.636l-.707.707M17.636 17.636l.707.707M6.364 6.364l.707.707M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <!-- Moon Icon (Show in Light Mode) -->
+                    <svg x-show="!isDarkMode" class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                </button>
+            </div>
+
+            <div class="glass-card p-1 rounded-2xl border border-slate-200/50 shadow-sm inline-flex items-center transition-all origin-top-right scale-[0.85] sm:scale-100 hover:shadow-md">
+                <button @click="logoutGlobal()" class="group flex items-center gap-1 bg-white border border-slate-100 px-4 py-2 rounded-xl text-xs font-black hover:border-rose-300 hover:bg-rose-50 transition-all duration-300">
+                    <span class="text-rose-600 uppercase tracking-tight" x-text="'Salir de ' + globalUsername"></span>
+                    <svg class="w-3.5 h-3.5 text-rose-500 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <header class="text-center mb-16 space-y-4 pt-16 sm:pt-4">
+            <div class="flex justify-center mb-6">
+                <img src="img/logo.png" alt="Logo Academia" class="h-24 object-contain">
+            </div>
+            <div
+                class="inline-flex items-center px-4 py-1.5 rounded-full bg-brand-blue/10 text-brand-blue text-xs font-bold uppercase tracking-widest mb-4">
+                Panel de Administración
+            </div>
+            <h1 class="text-4xl sm:text-6xl font-black tracking-tight leading-tight">
+                <span class="text-brand-blue dark:text-blue-400">Academia</span> 
+                <span class="text-brand-red dark:text-red-500">Admin</span>
+            </h1>
+            <p class="text-slate-500 dark:text-slate-400 text-sm sm:text-base max-w-lg mx-auto font-medium">
+                Gestiona asistencias, certificados y notas de idiomas de forma unificada y profesional.
+            </p>
+        </header>
+
+        <main class="grid gap-8" :class="globalRole === 'admin' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto w-full'">
+            <!-- Módulo: Asistencias -->
+            <div @click="openAuth('Asistencias/', 'A')"
+                class="module-card bg-white/80 dark:bg-slate-900/60 border border-slate-200 dark:border-white/10 backdrop-blur-xl rounded-3xl p-8 flex flex-col items-center text-center group shadow-xl shadow-slate-200/40 dark:shadow-none">
+                <div
+                    class="w-20 h-20 rounded-2xl bg-brand-blue/10 flex items-center justify-center mb-6 transition-colors duration-500 icon-box-blue">
+                    <svg class="w-10 h-10 text-brand-blue transition-colors duration-500"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4">
+                        </path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold mb-3 text-slate-900 dark:text-white">Asistencias</h3>
+                <p class="text-slate-500 dark:text-slate-400 mb-6 flex-1 italic">
+                    Control diario de alumnos, faltas y recuperaciones en tiempo real.
+                </p>
+                <div class="flex items-center text-brand-blue font-bold text-sm">
+                    Acceder <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Módulo: Certificados -->
+            <div x-show="globalRole === 'admin'" @click="openAuth('CertificadosAgenciaTributaria/', 'B')"
+                class="module-card bg-white/80 dark:bg-slate-900/60 border border-slate-200 dark:border-white/10 backdrop-blur-xl rounded-3xl p-8 flex flex-col items-center text-center group shadow-xl shadow-slate-200/40 dark:shadow-none">
+                <div
+                    class="w-20 h-20 rounded-2xl bg-brand-red/10 flex items-center justify-center mb-6 transition-colors duration-500 icon-box-red">
+                    <svg class="w-10 h-10 text-brand-red transition-colors duration-500"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                        </path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold mb-3 text-slate-900 dark:text-white">Certificados</h3>
+                <p class="text-slate-500 dark:text-slate-400 mb-6 flex-1 italic">
+                    Generación de certificados para la Agencia Tributaria y material de estudio.
+                </p>
+                <div class="flex items-center text-brand-red font-bold text-sm">
+                    Acceder <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Módulo: Notas de Idiomas -->
+            <div @click="openAuth('NotasIdiomasWeb/', 'A')"
+                class="module-card bg-white/80 dark:bg-slate-900/60 border border-slate-200 dark:border-white/10 backdrop-blur-xl rounded-3xl p-8 flex flex-col items-center text-center group shadow-xl shadow-slate-200/40 dark:shadow-none">
+                <div
+                    class="w-20 h-20 rounded-2xl bg-brand-blue/5 flex items-center justify-center mb-6 transition-colors duration-500 icon-box-blue">
+                    <svg class="w-10 h-10 text-brand-blue transition-colors duration-500"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                        </path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold mb-3 text-slate-900 dark:text-white text-center">Notas de Idiomas</h3>
+                <p class="text-slate-500 dark:text-slate-400 mb-6 flex-1 italic">
+                    Gestión de calificaciones por skills y cálculo de media inteligente.
+                </p>
+                <div class="flex items-center text-brand-blue font-bold text-sm">
+                    Acceder <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Módulo: Estadísticas (Admin Only) -->
+            <div x-show="globalRole === 'admin'" @click="openAuth('Estadisticas/', 'S')"
+                class="module-card bg-white/80 dark:bg-slate-900/60 border border-slate-200 dark:border-white/10 backdrop-blur-xl rounded-3xl p-8 flex flex-col items-center text-center group shadow-xl shadow-slate-200/40 dark:shadow-none">
+                <div
+                    class="w-20 h-20 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-6 transition-colors duration-500 icon-box-emerald">
+                    <svg class="w-10 h-10 text-emerald-600 transition-colors duration-500"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold mb-3 text-slate-900 dark:text-white text-center">Estadísticas</h3>
+                <p class="text-slate-500 dark:text-slate-400 mb-6 flex-1 italic">
+                    Análisis de altas, bajas y crecimiento de alumnos por mes.
+                </p>
+                <div class="flex items-center text-emerald-600 font-bold text-sm">
+                    Acceder <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Módulo: Lista de Espera (Admin Only) -->
+            <div x-show="globalRole === 'admin'" @click="openAuth('ListaEspera/', 'A')"
+                class="module-card bg-white/80 dark:bg-slate-900/60 border border-slate-200 dark:border-white/10 backdrop-blur-xl rounded-3xl p-8 flex flex-col items-center text-center group shadow-xl shadow-slate-200/40 dark:shadow-none">
+                <div
+                    class="w-20 h-20 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-6 transition-colors duration-500 icon-box-amber">
+                    <svg class="w-10 h-10 text-amber-600 transition-colors duration-500"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold mb-3 text-slate-900 dark:text-white text-center">Lista de Espera</h3>
+                <p class="text-slate-500 dark:text-slate-400 mb-6 flex-1 italic text-center">
+                    Registro y seguimiento de solicitudes de ingreso para nuevos alumnos.
+                </p>
+                <div class="flex items-center text-amber-600 font-bold text-sm">
+                    Acceder <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
+                </div>
+            </div>
+            
+            <!-- Módulo: Modificación Web (Admin Only) -->
+            <div x-show="globalRole === 'admin'" @click="openWebConfig"
+                class="module-card bg-white/80 dark:bg-slate-900/60 border border-slate-200 dark:border-white/10 backdrop-blur-xl rounded-3xl p-8 flex flex-col items-center text-center group shadow-xl shadow-slate-200/40 dark:shadow-none">
+                <div
+                    class="w-20 h-20 rounded-2xl bg-slate-200/50 flex items-center justify-center mb-6 transition-colors duration-500 icon-box-slate">
+                    <svg class="w-10 h-10 text-slate-600 transition-colors duration-500"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold mb-3 text-slate-900 dark:text-white text-center">Modificación Web</h3>
+                <p class="text-slate-500 dark:text-slate-400 mb-6 flex-1 italic">
+                    Configura textos dinámicos, avisos y notas del portal.
+                </p>
+                <div class="flex items-center text-slate-600 font-bold text-sm">
+                    Abrir Ajustes <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
+                </div>
+            </div>
+        </main>
+
+        <footer class="mt-24 pt-8 border-t border-slate-200 text-center text-slate-400 text-sm font-medium">
+            &copy; 2026 Academia de Idiomas - Sistema de Gestión Premium
+        </footer>
+    </div>
+
+    <!-- Modal de Modificación Web -->
+    <div x-show="showWebModal" class="fixed inset-0 z-[120] flex items-center justify-center p-6" x-transition x-cloak>
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md" @click="showWebModal = false"></div>
+        <div class="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-[3rem] relative z-10 border border-white dark:border-white/10 overflow-hidden shadow-2xl flex flex-col max-h-[85vh] transition-all">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-brand-blue via-brand-red to-emerald-400"></div>
+            
+            <div class="h-full flex flex-col p-8 sm:p-12 relative overflow-hidden">
+                <!-- Header -->
+                <div class="flex items-start justify-between mb-8">
+                    <div>
+                        <h1 class="text-4xl font-black text-slate-900 dark:text-white tracking-tight">Modificación Web</h1>
+                        <p class="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] opacity-70">Ajustes y Mantenimiento</p>
+                    </div>
+                    <button @click="showWebModal = false"
+                        class="w-12 h-12 bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-900/30 text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 rounded-2xl flex items-center justify-center transition-all duration-300 transform hover:rotate-90">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                <!-- Tabs Navigation -->
+                <div class="flex items-center gap-2 bg-slate-100/50 dark:bg-slate-800/80 p-1.5 rounded-[2rem] mb-10 border border-slate-200/50 dark:border-slate-700/50 shadow-inner">
+                    <button @click="webConfigTab = 'general'" 
+                        :class="webConfigTab === 'general' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xl' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
+                        class="flex-1 py-4 px-6 rounded-[1.5rem] text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2">
+                        General
+                    </button>
+                    <button @click="webConfigTab = 'reseteos'" 
+                        :class="webConfigTab === 'reseteos' ? 'bg-white text-rose-600 shadow-xl' : 'text-slate-500 hover:text-slate-800'"
+                        class="flex-1 py-4 px-6 rounded-[1.5rem] text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2">
+                        Reseteos
+                    </button>
+                    <button @click="webConfigTab = 'sistema'" 
+                        :class="webConfigTab === 'sistema' ? 'bg-white text-brand-blue shadow-xl' : 'text-slate-500 hover:text-slate-800'"
+                        class="flex-1 py-4 px-6 rounded-[1.5rem] text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2">
+                        Sistema
+                    </button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto pr-4 custom-scrollbar">
+                    
+                    <!-- TAB: GENERAL -->
+                    <div x-show="webConfigTab === 'general'" x-transition class="space-y-10">
+                        <section>
+                            <label class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 block ml-2">Pie de Página Informes (PDF)</label>
+                            <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/50 rounded-[2rem] p-8 shadow-sm">
+                                <textarea x-model="webConfig.attendance_pdf_note"
+                                    class="w-full h-24 bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl p-5 text-sm font-bold text-slate-700 dark:text-slate-300 focus:ring-4 focus:ring-rose-500/5 focus:bg-white dark:focus:bg-slate-800 transition-all resize-none shadow-inner"></textarea>
+                            </div>
+                        </section>
+
+                        <section>
+                            <label class="text-xs font-black text-slate-400 uppercase tracking-widest mb-8 block ml-2">Plantillas de WhatsApp</label>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <template x-for="(tpl, key) in webConfig.whatsapp_templates" :key="key">
+                                    <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/50 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:border-brand-blue/20 dark:hover:border-blue-500/30 transition-all group">
+                                        <label class="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase block mb-4 tracking-[0.2em] group-hover:text-brand-blue dark:group-hover:text-blue-400 transition-colors" x-text="key.replace(/_/g, ' ')"></label>
+                                        <textarea x-model="webConfig.whatsapp_templates[key]"
+                                            class="w-full h-32 bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl p-5 text-sm font-bold text-slate-700 dark:text-slate-300 focus:ring-4 focus:ring-emerald-500/5 focus:bg-white dark:focus:bg-slate-800 transition-all resize-none shadow-inner"></textarea>
+                                    </div>
+                                </template>
+                            </div>
+                        </section>
+
+                        <div class="pt-8 sticky bottom-0 bg-white/95 backdrop-blur-md pb-6 border-t border-slate-100/50 z-10 flex justify-center">
+                            <button @click="saveWebConfig" :disabled="isSavingWeb"
+                                class="group relative w-full sm:w-auto px-16 py-5 bg-slate-900 rounded-[2rem] text-white font-black text-xs uppercase tracking-[0.2em] overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-brand-blue/30 hover:-translate-y-1 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3">
+                                
+                                <!-- Background Gradient Hover -->
+                                <div class="absolute inset-0 bg-gradient-to-r from-brand-blue via-brand-red to-brand-blue bg-[length:200%_auto] opacity-0 group-hover:opacity-100 transition-all duration-700 animate-gradient-x"></div>
+                                
+                                <span class="relative z-10 flex items-center gap-3">
+                                    <template x-if="!isSavingWeb">
+                                        <div class="flex items-center gap-3">
+                                            <span>Guardar Cambios Generales</span>
+                                            <svg class="w-5 h-5 transform transition-transform group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                                            </svg>
+                                        </div>
+                                    </template>
+                                    <template x-if="isSavingWeb">
+                                        <div class="flex items-center gap-3">
+                                            <span>Guardando Configuración...</span>
+                                            <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        </div>
+                                    </template>
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- TAB: RESETEOS -->
+                    <div x-show="webConfigTab === 'reseteos'" x-transition class="space-y-10">
+                        <!-- Reset Attendance (Diario) -->
+                        <section class="bg-rose-50 dark:bg-rose-950/20 rounded-[2.5rem] p-10 border border-rose-100 dark:border-rose-900/30 shadow-sm">
+                            <div class="flex items-center gap-4 mb-8">
+                                <div class="w-12 h-12 bg-white dark:bg-rose-900/50 rounded-2xl flex items-center justify-center text-rose-500 shadow-sm">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </div>
+                                <h5 class="text-base font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight">Limpieza de Asistencias (Faltas)</h5>
+                            </div>
+                            <button @click="resetAttendance" 
+                                class="w-full sm:w-auto px-10 bg-white dark:bg-slate-800 border-2 border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-rose-600 hover:text-white dark:hover:bg-rose-900 dark:hover:text-rose-200 transition-all shadow-lg shadow-rose-100 dark:shadow-none">
+                                Ejecutar Limpieza Global de Faltas
+                            </button>
+                        </section>
+
+                        <!-- Reset por Curso -->
+                        <section class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/50 rounded-[2.5rem] p-10 shadow-sm group transition-colors">
+                            <div class="flex items-start gap-4 mb-10">
+                                <div class="w-12 h-12 bg-slate-50 dark:bg-slate-900 group-hover:bg-rose-50 dark:group-hover:bg-rose-900/50 rounded-2xl flex items-center justify-center text-rose-500 shadow-sm transition-colors duration-500">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                                </div>
+                                <div>
+                                    <h5 class="text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">Reseteo por Curso Académico</h5>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">Borrado masivo de notas</p>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-8">
+                                <div class="max-w-md">
+                                    <label class="text-xs font-black text-slate-400 dark:text-slate-400 uppercase ml-2 tracking-widest mb-4 block">1. Selecciona el curso</label>
+                                    <select x-model="resetGrado" @change="fetchResetStudents"
+                                        class="w-full bg-slate-50 dark:bg-slate-900 border-2 border-transparent rounded-[1.5rem] px-6 py-5 text-sm font-black text-slate-700 dark:text-slate-300 focus:border-rose-200 dark:focus:border-rose-900 transition-all appearance-none cursor-pointer shadow-inner">
+                                        <option value="">-- Listado de Cursos --</option>
+                                        <template x-for="curso in cursosList" :key="curso">
+                                            <option :value="curso" x-text="curso"></option>
+                                        </template>
+                                    </select>
+                                </div>
+
+                                <div x-show="resetStudents.length > 0" x-transition class="bg-slate-50 dark:bg-slate-900/50 rounded-[2rem] p-8 border border-slate-100 dark:border-slate-800">
+                                    <label class="text-xs font-black text-slate-400 uppercase mb-5 block tracking-widest">2. Alumnos a resetear (Excluye si es necesario)</label>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto custom-scrollbar pr-2">
+                                        <template x-for="s in resetStudents" :key="s.id">
+                                            <label class="flex items-center gap-4 p-4 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-2xl cursor-pointer transition-all border border-slate-100/50 dark:border-slate-700/50 group/item">
+                                                <input type="checkbox" :checked="!excludedResetIds.includes(s.id)" @change="toggleResetExclusion(s.id)"
+                                                    class="rounded-[0.4rem] w-6 h-6 text-rose-500 border-slate-200 dark:border-slate-600 dark:bg-slate-900 focus:ring-rose-500 transition-all cursor-pointer">
+                                                <span class="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover/item:text-rose-600 dark:group-hover/item:text-rose-400" x-text="s.name"></span>
+                                            </label>
+                                        </template>
+                                    </div>
+                                    <button @click="confirmResetCourse" :disabled="!resetGrado || isResettingCourse || resetStudents.length <= excludedResetIds.length"
+                                        class="w-full mt-8 bg-rose-500 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-rose-200 hover:bg-rose-600 transition-all">
+                                        Confirmar Borrado del Curso
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Reset por Alumno -->
+                        <section class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/50 rounded-[2.5rem] p-10 shadow-sm group">
+                            <div class="flex items-start gap-4 mb-10">
+                                <div class="w-12 h-12 bg-slate-50 dark:bg-slate-900 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/50 rounded-2xl flex items-center justify-center text-indigo-500 shadow-sm transition-colors duration-500">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                </div>
+                                <div>
+                                    <h5 class="text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">Reseteo por Alumno Individual</h5>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">Búsqueda selectiva</p>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                <div class="relative">
+                                    <label class="text-xs font-black text-slate-400 uppercase ml-2 tracking-widest mb-4 block">Buscar Alumno</label>
+                                    <input type="text" x-model="resetStudentQuery" @input.debounce.300ms="searchResetStudent()"
+                                        placeholder="Empieza a escribir..."
+                                        class="w-full bg-slate-50 dark:bg-slate-900 border-2 border-transparent rounded-[1.5rem] px-6 py-5 text-sm font-black text-slate-700 dark:text-slate-300 focus:border-indigo-200 dark:focus:border-indigo-900/50 transition-all shadow-inner">
+                                    <div x-show="resetStudentResults.length > 0" class="absolute z-50 w-full mt-2 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-2xl max-h-60 overflow-y-auto">
+                                        <template x-for="s in resetStudentResults" :key="s.id">
+                                            <button @click="selectResetStudent(s)" class="w-full text-left px-6 py-4 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 border-b border-slate-50 dark:border-slate-700/50 transition-all">
+                                                <span x-text="s.name"></span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <div x-show="selectedResetStudent" class="bg-indigo-50/50 dark:bg-indigo-950/20 rounded-[2rem] p-10 border border-indigo-100/50 dark:border-indigo-900/30">
+                                    <p class="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase mb-6 tracking-widest">Borrar notas de <span class="text-slate-900 dark:text-white" x-text="selectedResetStudent.name"></span> en:</p>
+                                    <div class="grid grid-cols-1 gap-3 mb-8">
+                                        <template x-for="course in resetStudentCourses" :key="course">
+                                            <label class="flex items-center gap-4 p-4 bg-white dark:bg-slate-800 rounded-2xl cursor-pointer transition-all border border-indigo-100/30 dark:border-indigo-900/30 hover:border-indigo-500 shadow-sm">
+                                                <input type="checkbox" :value="course" x-model="selectedResetCourses"
+                                                    class="rounded-[0.4rem] w-6 h-6 text-indigo-500 border-slate-200 dark:border-slate-600 dark:bg-slate-900 focus:ring-indigo-500 transition-all cursor-pointer">
+                                                <span class="text-[12px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight" x-text="course"></span>
+                                            </label>
+                                        </template>
+                                    </div>
+                                    <button @click="confirmResetStudent" :disabled="selectedResetCourses.length === 0 || isResettingStudent"
+                                        class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all">
+                                        Borrar Notas del Alumno
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
+                        <!-- Reset Estadísticas -->
+                        <section class="bg-emerald-50 dark:bg-emerald-950/20 rounded-[2.5rem] p-10 border border-emerald-100 dark:border-emerald-900/30 shadow-sm">
+                            <div class="flex items-center gap-4 mb-8">
+                                <div class="w-12 h-12 bg-white dark:bg-emerald-900/50 rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                                </div>
+                                <h5 class="text-base font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight">Reseteo de Estadísticas Anuales</h5>
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-bold mb-6 max-w-xl">
+                                Esta acción vaciará el historial de altas y bajas del módulo de estadísticas. <span class="text-brand-red">Atención:</span> No borrará alumnos ni notas, solo el registro de cambios acumulados.
+                            </p>
+                            <button @click="resetStatistics" :disabled="isResettingStats"
+                                class="w-full sm:w-auto px-10 bg-white dark:bg-slate-800 border-2 border-emerald-200 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-600 hover:text-white dark:hover:bg-emerald-900 dark:hover:text-emerald-200 transition-all shadow-lg shadow-emerald-100 dark:shadow-none disabled:opacity-50">
+                                <span x-text="isResettingStats ? 'Reseteando...' : 'Resetear Estadísticas Anuales'"></span>
+                            </button>
+                        </section>
+
+                        <!-- Reset Waiting List -->
+                        <section class="bg-amber-50 dark:bg-amber-950/20 rounded-[2.5rem] p-10 border border-amber-100 dark:border-amber-900/30 shadow-sm group">
+                            <div class="flex items-center gap-4 mb-8">
+                                <div class="w-12 h-12 bg-white dark:bg-amber-900/50 rounded-2xl flex items-center justify-center text-amber-500 shadow-sm transition-transform group-hover:rotate-12">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                                </div>
+                                <h5 class="text-base font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight">Limpieza de Lista de Espera</h5>
+                            </div>
+                            
+                            <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-6">Selecciona qué registros quieres eliminar de forma definitiva:</p>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <button @click="resetWaitingList('pendiente')" 
+                                    class="px-6 py-4 bg-white dark:bg-slate-800 border-2 border-slate-200 text-slate-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all shadow-sm">
+                                    Borrar Pendientes
+                                </button>
+                                <button @click="resetWaitingList('confirmado')" 
+                                    class="px-6 py-4 bg-white dark:bg-slate-800 border-2 border-emerald-200 text-emerald-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
+                                    Borrar Confirmados
+                                </button>
+                                <button @click="resetWaitingList('nulo')" 
+                                    class="px-6 py-4 bg-white dark:bg-slate-800 border-2 border-rose-200 text-rose-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-sm">
+                                    Borrar Nulos
+                                </button>
+                                <button @click="resetWaitingList('all')" 
+                                    class="px-6 py-4 bg-amber-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-600 transition-all shadow-lg shadow-amber-200 dark:shadow-none">
+                                    Vaciado Total
+                                </button>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- TAB: SISTEMA -->
+                    <div x-show="webConfigTab === 'sistema'" x-transition class="space-y-10">
+                        <section class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-brand-blue/10 dark:border-white/5 rounded-[3.5rem] p-12 shadow-2xl relative overflow-hidden transition-all hover:bg-white dark:hover:bg-slate-800 group/backup">
+                            <!-- Decoración sutil -->
+                            <div class="absolute top-0 right-0 w-64 h-64 bg-brand-blue/5 dark:bg-blue-500/5 rounded-full blur-[80px] -mr-32 -mt-32 transition-transform duration-1000 group-hover/backup:scale-150"></div>
+                            
+                            <div class="flex items-center gap-5 mb-12 relative z-10">
+                                <div class="w-14 h-14 bg-brand-blue/10 dark:bg-blue-900/50 rounded-2xl flex items-center justify-center text-brand-blue dark:text-blue-400 shadow-sm">
+                                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.58 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.58 4 8 4s8-1.79 8-4M4 7c0-2.21 3.58-4 8-4s8 1.79 8 4m0 5c0 2.21-3.58 4-8 4s-8-1.79-8-4"></path></svg>
+                                </div>
+                                <div>
+                                    <h5 class="text-2xl font-black tracking-tight text-slate-800 dark:text-white">Copias de Seguridad (Backup)</h5>
+                                    <p class="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest leading-none mt-1">Gestión de snapshots y recuperación de datos</p>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 relative z-10">
+                                <div class="bg-slate-50/50 dark:bg-slate-900/50 p-8 rounded-3xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between group/daily hover:bg-white dark:hover:bg-slate-800 hover:border-brand-blue/20 dark:hover:border-blue-500/30 transition-all shadow-sm">
+                                    <div>
+                                        <div class="flex items-center justify-between mb-4">
+                                            <p class="text-xs text-slate-400 dark:text-slate-500 font-extrabold uppercase tracking-[0.2em]">Snapshots Diarios</p>
+                                            <div class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
+                                        </div>
+                                        <select x-model="selectedDiaria" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/50 rounded-2xl p-4 text-sm font-black text-slate-700 dark:text-slate-300 outline-none cursor-pointer focus:ring-4 focus:ring-brand-blue/5 dark:focus:ring-blue-500/10 focus:border-brand-blue dark:focus:border-blue-500 transition-all mb-4">
+                                            <option value="">-- Historial --</option>
+                                            <template x-for="file in backupInfo.diaria" :key="file.filename">
+                                                <option :value="file.filename" x-text="file.date"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                    <button @click="restoreBackup('diaria')" :disabled="isRestoring || !selectedDiaria" 
+                                        class="w-full py-4 bg-slate-900 dark:bg-slate-700 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-brand-blue dark:hover:bg-blue-600 transition-all shadow-xl shadow-slate-200 dark:shadow-none disabled:opacity-20 disabled:cursor-not-allowed">
+                                        Restaurar Snapshot Diario
+                                    </button>
+                                </div>
+
+                                <div class="bg-slate-50/50 dark:bg-slate-900/50 p-8 rounded-3xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between group/weekly hover:bg-white dark:hover:bg-slate-800 hover:border-emerald-500/20 dark:hover:border-emerald-500/30 transition-all shadow-sm">
+                                    <div>
+                                        <div class="flex items-center justify-between mb-4">
+                                            <p class="text-xs text-slate-400 dark:text-slate-500 font-extrabold uppercase tracking-[0.2em]">Snapshots Semanales</p>
+                                            <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                                        </div>
+                                        <select x-model="selectedSemanal" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/50 rounded-2xl p-4 text-sm font-black text-slate-700 dark:text-slate-300 outline-none cursor-pointer focus:ring-4 focus:ring-emerald-500/5 dark:focus:ring-emerald-500/10 focus:border-emerald-500 transition-all mb-4">
+                                            <option value="">-- Historial --</option>
+                                            <template x-for="file in backupInfo.semanal" :key="file.filename">
+                                                <option :value="file.filename" x-text="file.date"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                    <button @click="restoreBackup('semanal')" :disabled="isRestoring || !selectedSemanal" 
+                                        class="w-full py-4 bg-slate-900 dark:bg-slate-700 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl shadow-slate-200 dark:shadow-none disabled:opacity-20 disabled:cursor-not-allowed">
+                                        Restaurar Snapshot Semanal
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Botones Colectivos -->
+                            <div class="bg-blue-50/50 dark:bg-blue-950/20 rounded-[2.5rem] p-8 border border-brand-blue/5 dark:border-blue-900/30 relative z-10">
+                                <div class="flex items-center gap-3 mb-6">
+                                    <div class="w-1.5 h-6 bg-brand-blue dark:bg-blue-500 rounded-full"></div>
+                                    <p class="text-xs font-black text-brand-blue dark:text-blue-400 uppercase tracking-widest">Generación de Copias Manuales</p>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <button @click="runBackup('diaria')" :disabled="isBackingUp"
+                                        class="group flex items-center justify-between bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 p-6 rounded-2xl border border-white dark:border-slate-700/50 hover:border-brand-blue/30 dark:hover:border-blue-500/30 hover:bg-white dark:hover:bg-slate-800 transition-all shadow-lg dark:shadow-none hover:shadow-brand-blue/5 disabled:opacity-50">
+                                        <div class="flex flex-col items-start leading-none text-left">
+                                            <span class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Copia Rápida</span>
+                                            <span class="text-xs font-black uppercase tracking-tight text-slate-700 dark:text-slate-300 group-hover:text-brand-blue dark:group-hover:text-blue-400">Manual Diario</span>
+                                        </div>
+                                        <div class="w-10 h-10 bg-slate-50 dark:bg-slate-900 group-hover:bg-brand-blue dark:group-hover:bg-blue-600 group-hover:text-white rounded-xl flex items-center justify-center transition-all">
+                                            <template x-if="!isBackingUp || lastBackupType !== 'diaria'">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                                            </template>
+                                            <template x-if="isBackingUp && lastBackupType === 'diaria'">
+                                                <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                            </template>
+                                        </div>
+                                    </button>
+
+                                    <button @click="runBackup('semanal')" :disabled="isBackingUp"
+                                        class="group flex items-center justify-between bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 p-6 rounded-2xl border border-white dark:border-slate-700/50 hover:border-emerald-500/30 dark:hover:border-emerald-500/30 hover:bg-white dark:hover:bg-slate-800 transition-all shadow-lg dark:shadow-none hover:shadow-emerald-500/5 disabled:opacity-50">
+                                        <div class="flex flex-col items-start leading-none text-left">
+                                            <span class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Copia Completa</span>
+                                            <span class="text-xs font-black uppercase tracking-tight text-slate-700 dark:text-slate-300 group-hover:text-emerald-600 dark:group-hover:text-emerald-400">Manual Semanal</span>
+                                        </div>
+                                        <div class="w-10 h-10 bg-slate-50 dark:bg-slate-900 group-hover:bg-emerald-500 dark:group-hover:bg-emerald-600 group-hover:text-white rounded-xl flex items-center justify-center transition-all">
+                                            <template x-if="!isBackingUp || lastBackupType !== 'semanal'">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                                            </template>
+                                            <template x-if="isBackingUp && lastBackupType === 'semanal'">
+                                                <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                            </template>
+                                        </div>
+                                    </button>
+                                </div>
+                                <div x-show="backupResult" x-transition class="mt-6 p-4 rounded-xl bg-white/50 border border-white text-xs font-bold text-slate-600 text-center shadow-sm" x-text="backupResult"></div>
+                            </div>
+                        </section>
+
+                        <section class="bg-rose-50/20 dark:bg-rose-950/20 border border-brand-red/10 dark:border-red-900/30 rounded-[3rem] p-12 relative group shadow-sm transition-all hover:border-brand-red/30 dark:hover:border-red-500/30">
+                            <div class="flex items-center gap-5 mb-12">
+                                <div class="w-14 h-14 bg-white dark:bg-slate-800 text-brand-red rounded-2xl flex items-center justify-center shadow-lg border border-slate-100 dark:border-white/5">
+                                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                                </div>
+                                <div>
+                                    <h5 class="text-2xl font-black text-slate-800 dark:text-white tracking-tight">Acceso y Seguridad</h5>
+                                    <p class="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest">Configuración de credenciales maestras</p>
+                                </div>
+                            </div>
+
+                            <div x-show="!recoverySuccess" class="bg-white dark:bg-slate-800 rounded-[2rem] p-8 border border-slate-100 dark:border-slate-700/50 shadow-sm">
+                                <p class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-6 block text-center">Debes desbloquear con la <b>Clave Maestra</b></p>
+                                <div class="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+                                    <input type="password" x-model="recoveryInput" @keydown.enter="verifyRecovery" placeholder="Introduce Clave Maestra..."
+                                        class="flex-1 bg-slate-50 dark:bg-slate-900 border-0 rounded-2xl px-6 py-4 font-bold text-center text-slate-800 dark:text-slate-200 outline-none focus:ring-4 focus:ring-brand-red/5 dark:focus:ring-red-500/20 transition-all">
+                                    <button @click="verifyRecovery" class="px-10 bg-slate-900 dark:bg-slate-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-brand-red dark:hover:bg-red-600 transition-all shadow-xl dark:shadow-none">Desbloquear</button>
+                                </div>
+                            </div>
+
+                            <div x-show="recoverySuccess" x-transition class="space-y-12 animate-fade-in">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                    <div class="space-y-6">
+                                        <label class="text-xs font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-widest ml-2 flex items-center gap-2">
+                                            <div class="w-1.5 h-1.5 bg-indigo-500 rounded-full"></div> Portal Administrativo
+                                        </label>
+                                        <div class="bg-slate-50 dark:bg-slate-900 rounded-[2rem] p-2 border border-slate-100 dark:border-slate-800 shadow-inner">
+                                            <input type="text" x-model="adminUser" placeholder="Usuario Admin" class="w-full bg-transparent border-none rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 dark:text-slate-200 focus:ring-0">
+                                            <input type="text" x-model="adminPass" placeholder="Nueva Contraseña Admin" class="w-full bg-transparent border-t border-slate-200/50 dark:border-slate-700/50 rounded-none px-6 py-4 text-sm font-bold text-slate-800 dark:text-slate-200 focus:ring-0">
+                                        </div>
+                                    </div>
+                                    <div class="space-y-6">
+                                        <label class="text-xs font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-widest ml-2 flex items-center gap-2">
+                                            <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div> Profesores / Notas
+                                        </label>
+                                        <div class="bg-slate-50 dark:bg-slate-900 rounded-[2rem] p-2 border border-slate-100 dark:border-slate-800 shadow-inner">
+                                            <input type="text" x-model="teacherUsers" placeholder="Listado Usuarios (Comas)" class="w-full bg-transparent border-none rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 dark:text-slate-200 focus:ring-0">
+                                            <input type="text" x-model="passA" placeholder="Nueva Contraseña A" class="w-full bg-transparent border-t border-slate-200/50 dark:border-slate-700/50 rounded-none px-6 py-4 text-sm font-bold text-slate-800 dark:text-slate-200 focus:ring-0">
+                                        </div>
+                                    </div>
+                                    <div class="space-y-6">
+                                        <label class="text-xs font-black text-rose-500 dark:text-rose-400 uppercase tracking-widest ml-2 flex items-center gap-2">
+                                            <div class="w-1.5 h-1.5 bg-rose-500 rounded-full"></div> Certificados (B)
+                                        </label>
+                                        <div class="bg-slate-50 dark:bg-slate-900 rounded-[2rem] p-2 border border-slate-100 dark:border-slate-800 shadow-inner">
+                                            <input type="text" x-model="passB" placeholder="Nueva Contraseña B" class="w-full bg-transparent border-none rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 dark:text-slate-200 focus:ring-0">
+                                        </div>
+                                    </div>
+                                    <div class="space-y-6">
+                                        <label class="text-xs font-black text-emerald-500 dark:text-emerald-400 uppercase tracking-widest ml-2 flex items-center gap-2">
+                                            <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div> Estadísticas (S)
+                                        </label>
+                                        <div class="bg-slate-50 dark:bg-slate-900 rounded-[2rem] p-2 border border-slate-100 dark:border-slate-800 shadow-inner">
+                                            <input type="text" x-model="passStats" placeholder="Nueva Contraseña Estadísticas" class="w-full bg-transparent border-none rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 dark:text-slate-200 focus:ring-0">
+                                        </div>
+                                    </div>
+                                    <div class="space-y-6">
+                                        <label class="text-xs font-black text-slate-800 dark:text-slate-400 uppercase tracking-widest ml-2 flex items-center gap-2">
+                                            <div class="w-1.5 h-1.5 bg-slate-900 dark:bg-slate-500 rounded-full"></div> Clave Maestra Sistema
+                                        </label>
+                                        <div class="bg-slate-50 dark:bg-slate-900 rounded-[2rem] p-2 border border-slate-100 dark:border-slate-800 shadow-inner">
+                                            <input type="text" x-model="masterKey" placeholder="Introduce Nueva Clave Maestra" class="w-full bg-transparent border-none rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 dark:text-slate-200 focus:ring-0">
+                                        </div>
+                                    </div>
+                                </div>
+                                <button @click="savePasswords" class="w-full bg-slate-900 dark:bg-slate-700 text-white py-6 rounded-2xl font-black text-sm uppercase tracking-[0.2em] hover:bg-brand-red dark:hover:bg-red-600 transition-all shadow-2xl dark:shadow-none">Aplicar Cambios de Seguridad</button>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Protección (Login) -->
+    <div x-show="showAuthModal" class="fixed inset-0 z-[100] flex items-center justify-center p-6" x-transition x-cloak>
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md" @click="showAuthModal = false"></div>
+        <div class="glass-card w-full max-w-sm rounded-[2.5rem] p-10 relative z-10 border border-white overflow-hidden shadow-2xl">
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-600 to-teal-400"></div>
+
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-black text-slate-900" x-text="targetType === 'B' ? 'Certificados' : (targetType === 'S' ? 'Estadísticas' : 'Panel de Gestión')"></h2>
+                <p class="text-slate-500 text-sm mt-1">Introduce la contraseña de acceso</p>
+            </div>
+
+            <form @submit.prevent="verifyPassword" class="space-y-4">
+                <div class="relative group">
+                    <input :type="showPortalPassword ? 'text' : 'password'" x-model="passwordInput" placeholder="Contraseña..." autofocus @keydown.enter="verifyPassword"
+                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-6 font-bold text-center text-lg outline-none focus:ring-4 focus:ring-blue-100 transition-all">
+                    
+                    <!-- Toggle Visibility Button -->
+                    <button type="button" @click="showPortalPassword = !showPortalPassword" 
+                        class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-blue-600 transition-colors outline-none focus:text-blue-600">
+                        <template x-if="!showPortalPassword">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </template>
+                        <template x-if="showPortalPassword">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
+                        </template>
+                    </button>
+                </div>
+                <p x-show="errorMsg" class="text-rose-500 text-xs font-bold text-center" x-text="errorMsg"></p>
+                <button type="submit" class="w-full bg-slate-900 text-white py-4 rounded-xl font-black text-sm uppercase tracking-widest shadow-xl shadow-slate-200">
+                    Verificar y Entrar
+                </button>
+            </form>
+
+            <button @click="showRecoveryModal = true; showAuthModal = false"
+                class="mt-6 w-full text-center text-slate-400 text-[10px] font-black uppercase tracking-tighter hover:text-blue-600 transition-colors">
+                ¿Has olvidado la contraseña?
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal de Recuperación Directa (Acceso desde Login) -->
+    <div x-show="showRecoveryModal" class="fixed inset-0 z-[130] flex items-center justify-center p-6" x-transition x-cloak>
+        <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-xl" @click="showRecoveryModal = false"></div>
+        <div class="glass-card w-full max-w-sm rounded-[2.5rem] p-10 relative z-10 border border-white overflow-hidden shadow-2xl">
+            <div x-show="!recoverySuccess">
+                <h3 class="text-xl font-black text-slate-900 mb-2 italic">Recuperar Acceso</h3>
+                <p class="text-slate-500 text-xs mb-6 font-medium leading-relaxed">Usa la Clave Maestra para ver las contraseñas actuales.</p>
+                <div class="space-y-4">
+                    <input type="password" x-model="recoveryInput" @keydown.enter="verifyRecovery" placeholder="Clave Maestra..." class="w-full bg-white border border-slate-200 rounded-xl px-5 py-4 font-bold text-center outline-none focus:ring-4 focus:ring-rose-100">
+                    <button @click="verifyRecovery" class="w-full bg-blue-600 text-white py-4 rounded-xl font-black text-sm uppercase tracking-widest shadow-lg shadow-blue-100">Revelar Ajustes</button>
+                    <button @click="showRecoveryModal = false; showAuthModal = true" class="w-full text-slate-400 text-xs font-bold mt-2">Volver</button>
+                </div>
+            </div>
+            <div x-show="recoverySuccess" class="space-y-6">
+                <div class="text-center">
+                    <h3 class="text-xl font-black text-slate-900 mb-1 italic">Acceso Recuperado</h3>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Contraseña de Certificados</p>
+                </div>
+                
+                <div class="bg-slate-50 p-6 rounded-3xl border border-slate-100 shadow-inner flex flex-col items-center justify-center">
+                    <span class="text-xl font-black text-rose-600 tracking-wider mb-2" x-text="passB"></span>
+                    <div class="px-3 py-1 bg-rose-50 rounded-full border border-rose-100">
+                        <span class="text-[9px] font-black text-rose-500 uppercase tracking-tighter">Certificados</span>
+                    </div>
+                </div>
+
+                <button @click="showRecoveryModal = false; recoverySuccess = false; showAuthModal = true" 
+                    class="w-full bg-slate-900 text-white py-4 rounded-xl font-black text-sm uppercase tracking-widest shadow-xl shadow-slate-200 transition-all hover:bg-rose-600">
+                    Entendido
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script>
+        function authApp() {
+            return {
+                isDarkMode: ThemeManager.isDark(),
+                toggleTheme() { this.isDarkMode = ThemeManager.toggle(); },
+
+                isGlobalLoggedIn: false,
+                globalRole: '',
+                globalUsername: '',
+                loginUsername: '',
+                loginPassword: '',
+                showPassword: false,
+                showPortalPassword: false, // For the protection modal
+                loginError: '',
+                isLoggingIn: false,
+            
+                showAuthModal: false,
+                showRecoveryModal: false,
+                passwordInput: '',
+                errorMsg: '',
+                targetUrl: '',
+                targetType: '',
+                
+                showWebModal: false,
+                isSavingWeb: false,
+                webConfig: {
+                    attendance_pdf_note: '',
+                    whatsapp_templates: {
+                        certificados: '',
+                        notas_exam_wow: '',
+                        notas_exam_good: '',
+                        notas_exam_path: '',
+                        notas_exam_error: '',
+                        notas_trim_wow: '',
+                        notas_trim_good: '',
+                        notas_trim_path: '',
+                        notas_trim_error: '',
+                        asistencias: ''
+                    }
+                },
+                backupInfo: { diaria: [], semanal: [] },
+                selectedDiaria: '',
+                selectedSemanal: '',
+                isRestoring: false,
+                isBackingUp: false,
+                lastBackupType: '',
+                backupResult: '',
+
+                // Reseteo de Notas por Curso
+                resetGrado: '',
+                resetStudents: [],
+                excludedResetIds: [],
+                isFetchingResetStudents: false,
+                isResettingCourse: false,
+                cursosList: [],
+
+                // Reseteo de Notas por Alumno
+                resetStudentQuery: '',
+                resetStudentResults: [],
+                selectedResetStudent: null,
+                resetStudentCourses: [],
+                selectedResetCourses: [],
+                isSearchingResetStudent: false,
+                isResettingStudent: false,
+                isResettingStats: false,
+
+                // Nueva pestaña para Modificación Web
+                webConfigTab: 'general', // 'general', 'reseteos', 'sistema'
+
+                // Las contraseñas ahora se gestionan en el servidor (/api)
+                adminUser: '',
+                adminPass: '',
+                teacherUsers: '',
+                passA: '',
+                passB: '',
+                passStats: '',
+                masterKey: '',
+
+                // Google Centralizado
+                isGoogleConnected: false,
+                googleUserEmail: '',
+
+                recoveryInput: '',
+                currentMasterKey: '',
+                recoverySuccess: false,
+
+                init() {
+                    const session = localStorage.getItem('admin_session');
+                    const role = localStorage.getItem('global_role');
+                    const username = localStorage.getItem('global_username');
+                    
+                    if (session && role && (Date.now() - parseInt(session)) < 2 * 60 * 60 * 1000) {
+                        this.isGlobalLoggedIn = true;
+                        this.globalRole = role;
+                        this.globalUsername = username || '';
+                        localStorage.setItem('admin_session', Date.now()); // refrescar sesión
+                    } else {
+                        // Limpiar si está caducado
+                        localStorage.removeItem('admin_session');
+                        localStorage.removeItem('global_role');
+                        localStorage.removeItem('global_username');
+                    }
+                    
+                    // Inicializar Google Centralizado
+                    if (window.GoogleAuthCentral) {
+                        GoogleAuthCentral.init((token) => this.fetchUserEmail(token));
+                        GoogleAuthCentral.setupAlpineSync(this);
+                    }
+                },
+
+                connectGoogle() {
+                    GoogleAuthCentral.connect();
+                },
+
+                logoutGoogle() {
+                    GoogleAuthCentral.logout();
+                },
+
+                openAuth(url, type) {
+                    // Si es Asistencias o Notas (Tipo A), entramos directamente
+                    if (type === 'A') {
+                        window.location.href = url;
+                        return;
+                    }
+
+                    // Para Certificados (Tipo B), mantenemos la protección secundaria
+                    this.targetUrl = url;
+                    this.targetType = type;
+                    this.passwordInput = '';
+                    this.errorMsg = '';
+                    this.showAuthModal = true;
+                },
+
+                async performGlobalLogin() {
+                    if (!this.loginUsername || !this.loginPassword) {
+                        this.loginError = 'Rellena ambos campos';
+                        return;
+                    }
+                    this.isLoggingIn = true;
+                    this.loginError = '';
+                    try {
+                        const res = await fetch('/api', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                action: 'global_login',
+                                username: this.loginUsername,
+                                password: this.loginPassword
+                            })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            localStorage.setItem('admin_session', Date.now());
+                            localStorage.setItem('global_role', data.role);
+                            localStorage.setItem('global_username', this.loginUsername);
+                            this.isGlobalLoggedIn = true;
+                            this.globalRole = data.role;
+                            this.globalUsername = this.loginUsername;
+                            this.loginPassword = '';
+                        } else {
+                            this.loginError = data.error || 'Credenciales incorrectas';
+                        }
+                    } catch (e) {
+                        this.loginError = 'Error de conexión';
+                    } finally {
+                        this.isLoggingIn = false;
+                    }
+                },
+
+                async verifyPassword() {
+                    try {
+                        const res = await fetch('/api', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                action: 'verify_portal_password',
+                                type: this.targetType,
+                                password: this.passwordInput
+                            })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            localStorage.setItem('admin_session', Date.now());
+                            window.location.href = this.targetUrl;
+                        } else {
+                            this.errorMsg = data.error || 'Contraseña incorrecta';
+                            this.passwordInput = '';
+                        }
+                    } catch (e) {
+                        this.errorMsg = 'Error al verificar contraseña';
+                    }
+                },
+
+                async verifyRecovery() {
+                    try {
+                        const res = await fetch('/api', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                action: 'get_portal_settings',
+                                masterKey: this.recoveryInput
+                            })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            this.adminUser = data.settings.adminUser;
+                            this.adminPass = data.settings.adminPass;
+                            this.teacherUsers = data.settings.teacherUsers;
+                            this.passA = data.settings.passA;
+                            this.passB = data.settings.passB;
+                            this.passStats = data.settings.passStats || 'Estadisticas123';
+                            this.masterKey = data.settings.masterKey;
+                            this.recoverySuccess = true;
+                            // Guardamos la masterKey para el guardado posterior
+                            this.currentMasterKey = this.recoveryInput;
+                            this.recoveryInput = '';
+                        } else {
+                            alert('Clave Maestra incorrecta');
+                            this.recoveryInput = '';
+                        }
+                    } catch (e) {
+                        alert('Error al conectar con el servidor');
+                    }
+                },
+
+                async savePasswords() {
+                    try {
+                        const res = await fetch('/api', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                action: 'save_portal_settings',
+                                masterKey: this.currentMasterKey,
+                                settings: {
+                                    adminUser: this.adminUser,
+                                    adminPass: this.adminPass,
+                                    teacherUsers: this.teacherUsers,
+                                    passA: this.passA,
+                                    passB: this.passB,
+                                    passStats: this.passStats,
+                                    masterKey: this.masterKey
+                                }
+                            })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            alert('Cambios guardados en el servidor');
+                            this.recoverySuccess = false;
+                            this.showRecoveryModal = false;
+                            this.showAuthModal = true;
+                        } else {
+                            alert('Error al guardar: ' + (data.error || 'Fallo desconocido'));
+                        }
+                    } catch (e) {
+                        alert('Error de conexión');
+                    }
+                },
+
+                async resetAttendance() {
+                    if (!confirm('¿Estás SEGURO de que quieres eliminar TODAS las marcas de asistencia (faltas)? Esta acción es irreversible.')) return;
+                    
+                    try {
+                        const res = await fetch('/api', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                action: 'reset_all_attendance',
+                                masterKey: this.currentMasterKey
+                            })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            alert(data.message);
+                        } else {
+                            alert('Error: ' + data.error);
+                        }
+                    } catch (e) {
+                        alert('Error de conexión');
+                    }
+                },
+
+                async openWebConfig() {
+                    try {
+                        const res = await fetch('/api?action=get_web_config');
+                        const data = await res.json();
+                        if (data.success) {
+                            this.webConfig = data.web_config || {};
+                            this.cursosList = data.cursos || [];
+                        }
+                        
+                        await this.getBackupInfo();
+                        this.showWebModal = true;
+                    } catch (e) { 
+                        console.error('Error al cargar config:', e);
+                        alert('Error al cargar configuración'); 
+                    }
+                },
+
+                async fetchResetStudents() {
+                    if (!this.resetGrado) {
+                        this.resetStudents = [];
+                        return;
+                    }
+                    this.isFetchingResetStudents = true;
+                    this.excludedResetIds = [];
+                    try {
+                        const res = await fetch(`/api?action=get_course_students_from_data&grado=${encodeURIComponent(this.resetGrado)}`);
+                        const data = await res.json();
+                        if (data.success) {
+                            this.resetStudents = data.students;
+                        }
+                    } catch (e) { console.error(e); }
+                    finally { this.isFetchingResetStudents = false; }
+                },
+
+                toggleResetExclusion(id) {
+                    if (this.excludedResetIds.includes(id)) {
+                        this.excludedResetIds = this.excludedResetIds.filter(i => i !== id);
+                    } else {
+                        this.excludedResetIds.push(id);
+                    }
+                },
+
+                async confirmResetCourse() {
+                    if (!this.resetGrado) return;
+                    
+                    const count = this.resetStudents.length - this.excludedResetIds.length;
+                    if (count <= 0) {
+                        alert('No hay alumnos seleccionados para resetear (todos están excluidos).');
+                        return;
+                    }
+
+                    if (!confirm(`¿Estás SEGURO de que quieres borrar las notas de ${count} alumnos del curso ${this.resetGrado}?`)) return;
+                    if (!confirm('Esta acción creará un snapshot de seguridad pero las notas activas se borrarán. ¿Continuar?')) return;
+
+                    this.isResettingCourse = true;
+                    try {
+                        const res = await fetch('/api', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                action: 'reset_course',
+                                grado: this.resetGrado,
+                                excludedIds: this.excludedResetIds
+                            })
+                        });
+                        const data = await res.json();
+                        if (data.status === 'reset_done') {
+                            alert('Reseteo completado con éxito.');
+                            this.resetGrado = '';
+                            this.resetStudents = [];
+                            this.excludedResetIds = [];
+                        } else {
+                            alert('Error: ' + data.error);
+                        }
+                    } catch (e) { alert('Error de conexión'); }
+                    finally { this.isResettingCourse = false; }
+                },
+
+                async searchResetStudent() {
+                    if (this.resetStudentQuery.length < 3) {
+                        this.resetStudentResults = [];
+                        return;
+                    }
+                    this.isSearchingResetStudent = true;
+                    try {
+                        const res = await fetch(`/api?action=search_students_with_notes&query=${encodeURIComponent(this.resetStudentQuery)}`);
+                        const data = await res.json();
+                        if (data.success) {
+                            this.resetStudentResults = data.results;
+                        }
+                    } catch (e) { console.error(e); }
+                    finally { this.isSearchingResetStudent = false; }
+                },
+
+                async selectResetStudent(student) {
+                    this.selectedResetStudent = student;
+                    this.resetStudentResults = [];
+                    this.resetStudentQuery = student.name;
+                    this.selectedResetCourses = [];
+                    
+                    try {
+                        const res = await fetch(`/api?action=get_student_courses_with_notes&studentId=${encodeURIComponent(student.id)}`);
+                        const data = await res.json();
+                        if (data.success) {
+                            this.resetStudentCourses = data.courses;
+                            // Por defecto marcar todos
+                            this.selectedResetCourses = [...data.courses];
+                        }
+                    } catch (e) { console.error(e); }
+                },
+
+                async confirmResetStudent() {
+                    if (!this.selectedResetStudent || this.selectedResetCourses.length === 0) return;
+
+                    if (!confirm(`¿Estás SEGURO de que quieres borrar las notas de ${this.selectedResetCourses.length} cursos para ${this.selectedResetStudent.name}?`)) return;
+                    if (!confirm('Esta acción no se puede deshacer de forma directa (se creará un snapshot). ¿Continuar?')) return;
+
+                    this.isResettingStudent = true;
+                    try {
+                        const res = await fetch('/api', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                action: 'reset_student_course_grades',
+                                studentId: this.selectedResetStudent.id,
+                                courseNames: this.selectedResetCourses
+                            })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            alert('Reseteo del alumno completado.');
+                            this.selectedResetStudent = null;
+                            this.resetStudentQuery = '';
+                            this.resetStudentCourses = [];
+                        } else {
+                            alert('Error: ' + data.error);
+                        }
+                    } catch (e) { alert('Error de conexión'); }
+                    finally { this.isResettingStudent = false; }
+                },
+
+                async resetStatistics() {
+                    if (!confirm('¿Estás SEGURO de que quieres resetear TODAS las estadísticas anuales? Esto borrará el historial de altas y bajas del sistema.')) return;
+                    if (!confirm('Esta acción borrará el log de eventos pero NO afectará a los alumnos ni sus notas actuales. ¿Continuar?')) return;
+                    
+                    this.isResettingStats = true;
+                    try {
+                        const res = await fetch('/api?action=reset_statistics');
+                        const data = await res.json();
+                        if (data.success) {
+                            alert('Estadísticas reseteadas correctamente.');
+                        } else {
+                            alert('Error: ' + data.error);
+                        }
+                    } catch (e) {
+                        alert('Error de conexión');
+                    } finally {
+                        this.isResettingStats = false;
+                    }
+                },
+
+                async resetWaitingList(type) {
+                    const msgs = {
+                        'all': '¿VACIAR TODA la lista de espera? Esta acción es definitiva.',
+                        'pendiente': '¿Borrar todos los registros PENDIENTES?',
+                        'confirmado': '¿Borrar todos los registros CONFIRMADOS?',
+                        'nulo': '¿Borrar todos los registros NULOS?'
+                    };
+                    if (!confirm(msgs[type])) return;
+
+                    try {
+                        const res = await fetch('/api', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'reset_waiting_list', type: type })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            alert("Limpieza completada correctamente");
+                        }
+                    } catch (e) { alert("Error al realizar la limpieza"); }
+                },
+
+                async getBackupInfo() {
+                    try {
+                        const res = await fetch('/api?action=get_backup_info');
+                        const data = await res.json();
+                        if (data.success) {
+                            this.backupInfo = data;
+                            // Pre-seleccionar la más reciente si no hay nada seleccionado
+                            if (data.diaria.length > 0 && !this.selectedDiaria) {
+                                this.selectedDiaria = data.diaria[0].filename;
+                            }
+                            if (data.semanal.length > 0 && !this.selectedSemanal) {
+                                this.selectedSemanal = data.semanal[0].filename;
+                            }
+                        } else {
+                            this.backupInfo = { diaria: [], semanal: [] };
+                        }
+                    } catch (e) { console.error('Error al cargar info de backup', e); }
+                },
+
+                async restoreBackup(type) {
+                    if (this.isRestoring) return;
+                    const filename = type === 'diaria' ? this.selectedDiaria : this.selectedSemanal;
+                    
+                    if (!filename) {
+                        alert('Por favor, selecciona una copia para restaurar.');
+                        return;
+                    }
+
+                    if (!confirm(`¿Estás SEGURO de que deseas restaurar la copia ${filename}? Se sobrescribirán todos los archivos actuales por los de esa copia.`)) return;
+                    
+                    this.isRestoring = true;
+                    try {
+                        const res = await fetch('/api', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'restore_backup', type, filename })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            alert(data.message);
+                            location.reload();
+                        } else {
+                            alert('Error: ' + data.error);
+                        }
+                    } catch (e) {
+                        alert('Error de conexión');
+                    } finally {
+                        this.isRestoring = false;
+                    }
+                },
+
+                async runBackup(type) {
+                    if (this.isBackingUp) return;
+                    this.isBackingUp = true;
+                    this.lastBackupType = type;
+                    this.backupResult = `Generando copia ${type.toUpperCase()}...`;
+                    
+                    try {
+                        const res = await fetch('/api', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'run_backup', type })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            this.backupResult = '✅ ' + data.message;
+                            this.getBackupInfo();
+                        } else {
+                            this.backupResult = '❌ Error: ' + data.error;
+                        }
+                    } catch (e) {
+                        this.backupResult = '❌ Error de conexión';
+                    } finally {
+                        this.isBackingUp = false;
+                        setTimeout(() => { if (!this.isBackingUp) this.backupResult = ''; }, 10000);
+                    }
+                },
+
+                async saveWebConfig() {
+                    this.isSavingWeb = true;
+                    try {
+                        const res = await fetch('/api', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                action: 'save_web_config',
+                                web_config: this.webConfig
+                            })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            alert('Configuración guardada correctamente');
+                            this.showWebModal = false;
+                        }
+                    } catch (e) { alert('Error al guardar'); }
+                    finally { this.isSavingWeb = false; }
+                },
+
+                // Métodos Google
+                async fetchUserEmail(token) {
+                    if (!token) token = localStorage.getItem('google_access_token');
+                    if (!token) return;
+                    try {
+                        const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        const data = await res.json();
+                        if (data.email) {
+                            this.googleUserEmail = data.email;
+                            localStorage.setItem('google_user_email', data.email);
+                        }
+                    } catch (e) { console.error('Error fetching user email', e); }
+                },
+
+                logoutGlobal() {
+                    localStorage.removeItem('admin_session');
+                    localStorage.removeItem('global_role');
+                    localStorage.removeItem('global_username');
+                    this.isGlobalLoggedIn = false;
+                    this.globalRole = '';
+                    this.globalUsername = '';
+                    this.loginUsername = '';
+                    this.loginPassword = '';
+                    GoogleAuthCentral.logout();
+                    window.location.reload();
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

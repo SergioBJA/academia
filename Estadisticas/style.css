@@ -1,0 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+    --brand-blue: #163675;
+    --brand-red: #cc0000;
+    --brand-blue-light: #1e4694;
+    --brand-red-light: #e60000;
+    --bg-main: #f8fafc;
+    --card-shadow: 0 10px 25px -5px rgba(22, 54, 117, 0.1), 0 8px 10px -6px rgba(22, 54, 117, 0.1);
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+    background-color: var(--bg-main);
+    color: #1e293b;
+    overflow-x: hidden;
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: var(--card-shadow);
+}
+
+.bg-brand-blue { background-color: var(--brand-blue); }
+.text-brand-blue { color: var(--brand-blue); }
+.bg-brand-red { background-color: var(--brand-red); }
+.text-brand-red { color: var(--brand-red); }
+
+.stat-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(22, 54, 117, 0.15);
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Gradients */
+.grad-blue {
+    background: linear-gradient(135deg, var(--brand-blue) 0%, var(--brand-blue-light) 100%);
+}
+
+.grad-red {
+    background: linear-gradient(135deg, var(--brand-red) 0%, var(--brand-red-light) 100%);
+}
+
+.delta-positive {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.delta-negative {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.delta-neutral {
+    background-color: #f1f5f9;
+    color: #475569;
+}

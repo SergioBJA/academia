@@ -1,0 +1,70 @@
+/* Estilos Base y para Impresión / Exportación PDF */
+:root {
+    --glass-bg: rgba(255, 255, 255, 0.8);
+    --glass-border: rgba(255, 255, 255, 0.3);
+}
+
+:root.dark {
+    --bg-main: #020617;
+    --bg-card: rgba(15, 23, 42, 0.8);
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --brand-blue: #38bdf8;
+    --primary: #38bdf8;
+    --primary-hover: #7dd3fc;
+    --glass-bg: rgba(15, 23, 42, 0.8);
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+.a4-paper {
+    width: 210mm;
+    min-height: 295mm;
+    background: white;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    margin: 0 auto;
+    position: relative;
+    padding: 15mm 20mm;
+    box-sizing: border-box;
+}
+
+@media print {
+    .no-print { 
+        display: none !important; 
+    }
+    body, .a4-paper { 
+        margin: 0; 
+        padding: 0;
+        box-shadow: none; 
+        background: white;
+    }
+}
+
+/* Scroll suave general */
+html { 
+    scroll-behavior: smooth; 
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar { 
+    width: 8px; 
+}
+::-webkit-scrollbar-track { 
+    background: #f1f1f1; 
+}
+::-webkit-scrollbar-thumb { 
+    background: #163675; 
+    border-radius: 4px; 
+}
+::-webkit-scrollbar-thumb:hover { 
+    background: #0f2757; 
+}
+
+/* Alpine.js Cloak -> Oculta elementos hasta que Alpine cargue */
+[x-cloak] { 
+    display: none !important; 
+}
+
+/* Clases utilitarias adicionales o patrones complejos */
+.pattern-bg {
+    background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgZmlsbD0ibm9uZSI+PHBhdGggc3Ryb2tlPSIjZmZmIiBkPSJNMCAxMGgyME0xMCAwdjIwIi8+PC9zdmc+');
+}
