@@ -205,7 +205,7 @@ def load_app_data():
         token = get_access_token()
         headers = {"Authorization": f"Bearer {token}"}
         url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/{CONFIG_SHEET}!A1"
-        with httpx.Client() as client:
+        with httpx.Client(timeout=10.0) as client:
             resp = client.get(url, headers=headers)
             if resp.status_code == 200:
                 rows = resp.json().get('values', [])
@@ -215,8 +215,10 @@ def load_app_data():
                     for k, v in defaults.items():
                         if k not in data: data[k] = v
                     return data
+            else:
+                print(f"DEBUG: load_app_data fallo: {resp.status_code} - {resp.text}")
     except Exception as e:
-        print(f"Error loading from Sheets: {e}")
+        print(f"DEBUG: Error load_app_data: {e}")
     
     return defaults
 
@@ -953,19 +955,28 @@ async def sync_from_sheets():
             name = sh['properties']['title']
             if any(re.search(p, name, re.IGNORECASE) for p in ignore): continue
             
-            # Leer datos de la pestaña
-            url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/'{name}'!A:Z"
+            print(f"DEBUG: Leyendo pestaña: {name}")
+            import urllib.parse
+            encoded_name = urllib.parse.quote(name)
+            url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/'{encoded_name}'!A:Z"
             r = await client.get(url, headers=headers)
             if r.status_code == 200:
                 rows = r.json().get('values', [])
-                if not rows: continue
+                if not rows:
+                    print(f"DEBUG: Pestaña {name} está vacía.")
+                    continue
                 
                 col = find_student_column(rows[0])
+                count = 0
                 for row in rows[1:]:
                     if len(row) > col and row[col] and len(str(row[col]).strip()) > 2:
                         while len(row) < 15: row.append("")
                         row[11] = name
                         all_notas.append(row)
+                        count += 1
+                print(f"DEBUG: {count} alumnos encontrados en {name}")
+            else:
+                print(f"DEBUG: Error leyendo {name}: {r.status_code} - {r.text}")
         
         # 2. Guardar en Google Sheets de forma asíncrona
         data = load_app_data()
@@ -978,13 +989,13 @@ async def sync_from_sheets():
         create_body = {"requests": [{"addSheet": {"properties": {"title": CONFIG_SHEET}}}]}
         await client.post(create_url, headers=headers, json=create_body) # Si ya existe dará error 400, no pasa nada
         
-        await client.put(update_url, headers=headers, json={"values": [[json_str]]})
-        
-    return ok_response({'message': f'Sincronizados {len(all_notas)} alumnos correctamente.'})
-    
-    data['notas'] = all_notas
-    save_app_data(data)
-    return ok_response({'message': f'Sincronizados {len(all_notas)} alumnos de {len(sheets)} cursos'})
+        save_resp = await client.put(update_url, headers=headers, json={"values": [[json_str]]})
+        if save_resp.status_code != 200:
+            print(f"DEBUG: Error guardando: {save_resp.status_code} - {save_resp.text}")
+        else:
+            print("DEBUG: Guardado exitoso en SYSTEM_CONFIG")
+            
+    return ok_response({'message': f'Sincronizados {len(all_notas)} alumnos correctamente. Revisa los logs en Vercel.'})
 
 async def get_portal_init():
     # Obtener cursos de Google Sheets
