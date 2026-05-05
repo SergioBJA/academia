@@ -935,39 +935,64 @@ async def get_cursos():
     })
 
 async def sync_from_sheets():
-    # 1. Obtener todos los cursos (pestañas)
+    print("DEBUG: Iniciando sincronización completa...")
     token = get_access_token()
     headers = {"Authorization": f"Bearer {token}"}
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}?fields=sheets.properties(title)", headers=headers)
-        if resp.status_code != 200: return JSONResponse(status_code=resp.status_code, content={"error": "Error Google"})
-        sheets = resp.json().get('sheets', [])
     
-    ignore = [r'vacio', r'plantilla', r'config', r'asistencias', r'notas', r'backup']
+    async with httpx.AsyncClient() as client:
+        # 1. Obtener pestañas
+        resp = await client.get(f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}?fields=sheets.properties(title)", headers=headers)
+        if resp.status_code != 200:
+            print(f"DEBUG: Error Google (Pestañas): {resp.status_code} - {resp.text}")
+            return JSONResponse(status_code=resp.status_code, content={"error": "Error Google Pestañas"})
+        
+        sheets = resp.json().get('sheets', [])
+        print(f"DEBUG: Encontradas {len(sheets)} pestañas en total.")
+
+    ignore = [r'vacio', r'plantilla', r'config', r'asistencias', r'notas', r'backup', r'system']
     data = load_app_data()
     all_notas = []
     
-    # 2. Leer cada pestaña y extraer alumnos
+    # 2. Leer cada pestaña
     for sh in sheets:
         name = sh['properties']['title']
-        if any(re.search(p, name, re.IGNORECASE) for p in ignore): continue
+        if any(re.search(p, name, re.IGNORECASE) for p in ignore):
+            print(f"DEBUG: Saltando pestaña ignorable: {name}")
+            continue
         
+        print(f"DEBUG: Procesando curso: {name}...")
         async with httpx.AsyncClient() as client:
-            url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/'{name}'!A:Z"
+            # Codificar el nombre de la pestaña para la URL
+            import urllib.parse
+            encoded_name = urllib.parse.quote(name)
+            url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/'{encoded_name}'!A:Z"
             r = await client.get(url, headers=headers)
+            
             if r.status_code == 200:
                 values = r.json().get('values', [])
-                if not values: continue
+                if not values:
+                    print(f"DEBUG: Pestaña {name} está vacía.")
+                    continue
                 
-                # Buscar en qué columna están los alumnos (por si no es la 2)
+                # Buscar columna de alumnos
                 student_col = find_student_column(values[0])
+                print(f"DEBUG: Curso {name} - Columna Alumno detectada: {student_col}")
                 
-                for row in values[1:]: # Saltar cabecera
-                    if len(row) > student_col and row[student_col]: # Si hay nombre de alumno
-                        # Aseguramos que la fila tenga suficiente longitud
+                count = 0
+                for row in values[1:]:
+                    if len(row) > student_col and row[student_col] and is_student(row[student_col]):
                         while len(row) < 15: row.append("")
-                        row[11] = name # Guardamos el nombre del curso
+                        row[11] = name
                         all_notas.append(row)
+                        count += 1
+                print(f"DEBUG: Curso {name} - Sincronizados {count} alumnos.")
+            else:
+                print(f"DEBUG: Error al leer pestaña {name}: {r.status_code} - {r.text}")
+    
+    print(f"DEBUG: Sincronización terminada. Total alumnos: {len(all_notas)}")
+    data['notas'] = all_notas
+    save_app_data(data)
+    return ok_response({'message': f'Sincronización terminada: {len(all_notas)} alumnos encontrados.'})
     
     data['notas'] = all_notas
     save_app_data(data)
