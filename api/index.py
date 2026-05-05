@@ -224,18 +224,19 @@ def save_app_data(data):
     try:
         token = get_access_token()
         headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+        json_str = json.dumps(data, ensure_ascii=False)
+        update_url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/{CONFIG_SHEET}!A1?valueInputOption=RAW"
+        update_body = {"values": [[json_str]]}
         
-        # 1. Asegurar que existe la pestaña
-        create_url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}:batchUpdate"
-        create_body = {"requests": [{"addSheet": {"properties": {"title": CONFIG_SHEET}}}]}
         with httpx.Client() as client:
-            client.post(create_url, headers=headers, json=create_body)
-            
-            # 2. Guardar el JSON en A1
-            json_str = json.dumps(data, ensure_ascii=False)
-            update_url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/{CONFIG_SHEET}!A1?valueInputOption=RAW"
-            update_body = {"values": [[json_str]]}
-            client.put(update_url, headers=headers, json=update_body)
+            resp = client.put(update_url, headers=headers, json=update_body)
+            if resp.status_code != 200:
+                # Si falla, intentamos crear la pestaña
+                create_url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}:batchUpdate"
+                create_body = {"requests": [{"addSheet": {"properties": {"title": CONFIG_SHEET}}}]}
+                client.post(create_url, headers=headers, json=create_body)
+                # Reintentar guardado
+                client.put(update_url, headers=headers, json=update_body)
         return True
     except Exception as e:
         print(f"Error saving to Sheets: {e}")
@@ -976,11 +977,10 @@ async def sync_from_sheets():
                 
                 # Buscar columna de alumnos
                 student_col = find_student_column(values[0])
-                print(f"DEBUG: Curso {name} - Columna Alumno detectada: {student_col}")
                 
                 count = 0
                 for row in values[1:]:
-                    if len(row) > student_col and row[student_col] and is_student(row[student_col]):
+                    if len(row) > student_col and row[student_col] and len(str(row[student_col]).strip()) > 2:
                         while len(row) < 15: row.append("")
                         row[11] = name
                         all_notas.append(row)
