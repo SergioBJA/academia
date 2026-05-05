@@ -189,61 +189,56 @@ async def get_google_contacts():
                 contacts[name.strip()] = clean_phone
         return contacts
 
+# --- PERSISTENCE VIA GOOGLE SHEETS ---
+CONFIG_SHEET = "SYSTEM_CONFIG"
+
 def load_app_data():
     defaults = {
-        'notas': [],
-        'anulados': [],
-        'trimester_checks': {},
-        'teacher_notes': {},
-        'snapshots': [],
-        'day_overrides': {},
-        'highlights': {},
-        'settings': {
-            'adminUser': 'Admin',
-            'adminPass': 'Admin-1234',
-            'teacherUsers': 'teacher1,teacher2,teacher3,teacher4',
-            'passA': '2020',
-            'passB': 'certificados123',
-            'masterKey': 'admin99'
-        },
-        'waiting_list': [],
-        'student_log': [],
-        'web_config': {
-            'attendance_pdf_note': 'NOTA: Las clases a las que el alumnado no ha asistido tienen un plazo del mismo mes para recuperarlas.',
-            'whatsapp_templates': {
-                'certificados': "Hola, adjunto el certificado de la Agencia Tributaria correspondiente al alumno/a *{nombre}*, perteneciente al año fiscal *{año}*.\n\nEl PDF con el certificado detallado acaba de ser descargado en tu dispositivo. (Acuérdate de adjuntarlo en este chat usando el clip 📎). ¡Gracias!",
-                'notas_exam_wow': "WOW, *{nombre}*!!! Tus notas en *YES OF COURSE* son increíbles!! Tienes el PDF con el detalle adjunto.\n\n*\"The limit is the sky\"* y tú estás volando alto.\n\nEstamos súper orgullosos de tu nivel!!! Enjoy your success!!!",
-                'notas_exam_good': "Hi, *{nombre}*!! Vaya nota has sacado en *YES OF COURSE*!! Échale un vistazo al PDF con el detalle.\n\nEstás muy cerca de la cima. Recuerda: *\"Consistency is the key to success\"*\n\nSigue brillando así!!! Great job!!!",
-                'notas_exam_path': "Hey, *{nombre}*!! Ya tienes tu nota de *YES OF COURSE* disponibles en el PDF adjunto.\n\nVas por buen camino!!! Sigue dándole duro porque *\"Small steps, big results\"* es la clave.\n\nA por el siguiente nivel, you can do it!!",
-                'notas_exam_error': "Hello, *{nombre}*!!! Ya están aquí tus notas de *YES OF COURSE*. Te enviamos el PDF con el detalle.\n\nDon't worry!! *\"Every expert was once a beginner\"*\n\nEstamos aquí para ayudarte a darle la vuelta a este resultado!! Let's work together!!!",
-                'notas_trim_wow': "WOW, *{nombre}*!!! Tus notas en *YES OF COURSE* son increíbles!! Tienes el PDF con el detalle adjunto.\n\n*\"The limit is the sky\"* y tú estás volando alto.\n\nEstamos súper orgullosos de tu nivel!!! Enjoy your success!!!",
-                'notas_trim_good': "Hi, *{nombre}*!! Vaya nota has sacado en *YES OF COURSE*!! Échale un vistazo al PDF con el detalle.\n\nEstás muy cerca de la cima. Recuerda: *\"Consistency is the key to success\"*\n\nSigue brillando así!!! Great job!!!",
-                'notas_trim_path': "Hey, *{nombre}*!! Ya tienes tu nota de *YES OF COURSE* disponibles en el PDF adjunto.\n\nVas por buen camino!!! Sigue dándole duro porque *\"Small steps, big results\"* es la clave.\n\nA por el siguiente nivel, you can do it!!",
-                'notas_trim_error': "Hello, *{nombre}*!!! Ya están aquí tus notas de *YES OF COURSE*. Te enviamos el PDF con el detalle.\n\nDon't worry!! *\"Every expert was once a beginner\"*\n\nEstamos aquí para ayudarte a darle la vuelta a este resultado!! Let's work together!!!",
-                'asistencias': "Hola {nombre}, te recordamos tu horario de clase en YES OF COURSE. ¡Te esperamos!"
-            }
-        }
+        'notas': [], 'anulados': [], 'trimester_checks': {}, 'teacher_notes': {},
+        'snapshots': [], 'day_overrides': {}, 'highlights': {},
+        'settings': {'adminUser': 'Admin', 'adminPass': 'Admin-1234', 'teacherUsers': 'teacher1,teacher2,teacher3,teacher4', 'passA': '2020', 'passB': 'certificados123', 'masterKey': 'admin99'},
+        'waiting_list': [], 'student_log': [],
+        'web_config': {'attendance_pdf_note': '...', 'whatsapp_templates': {}}
     }
-    if os.path.exists(DATA_FILE):
-        try:
-            with open(DATA_FILE, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                # Merge with defaults to ensure all keys exist
-                for k, v in defaults.items():
-                    if k not in data:
-                        data[k] = v
-                return data
-        except:
-            return defaults
+    
+    try:
+        token = get_access_token()
+        headers = {"Authorization": f"Bearer {token}"}
+        url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/{CONFIG_SHEET}!A1"
+        with httpx.Client() as client:
+            resp = client.get(url, headers=headers)
+            if resp.status_code == 200:
+                rows = resp.json().get('values', [])
+                if rows and rows[0]:
+                    data = json.loads(rows[0][0])
+                    # Merge with defaults
+                    for k, v in defaults.items():
+                        if k not in data: data[k] = v
+                    return data
+    except Exception as e:
+        print(f"Error loading from Sheets: {e}")
+    
     return defaults
 
 def save_app_data(data):
     try:
-        with open(DATA_FILE, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
+        token = get_access_token()
+        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+        
+        # 1. Asegurar que existe la pestaña
+        create_url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}:batchUpdate"
+        create_body = {"requests": [{"addSheet": {"properties": {"title": CONFIG_SHEET}}}]}
+        with httpx.Client() as client:
+            client.post(create_url, headers=headers, json=create_body)
+            
+            # 2. Guardar el JSON en A1
+            json_str = json.dumps(data, ensure_ascii=False)
+            update_url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/{CONFIG_SHEET}!A1?valueInputOption=RAW"
+            update_body = {"values": [[json_str]]}
+            client.put(update_url, headers=headers, json=update_body)
         return True
     except Exception as e:
-        print(f"Error saving data: {e}")
+        print(f"Error saving to Sheets: {e}")
         return False
 
 # --- API ENDPOINTS ---
