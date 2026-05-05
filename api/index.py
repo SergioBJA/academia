@@ -975,9 +975,7 @@ async def sync_from_sheets():
             if any(re.search(p, name, re.IGNORECASE) for p in ignore): continue
             
             print(f"DEBUG: Leyendo pestaña: {name}")
-            import urllib.parse
-            encoded_name = urllib.parse.quote(name)
-            url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/'{encoded_name}'!A:Z"
+            url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/'{name}'!A:Z"
             r = await client.get(url, headers=headers)
             if r.status_code == 200:
                 rows = r.json().get('values', [])
