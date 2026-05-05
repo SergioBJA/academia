@@ -204,17 +204,19 @@ def load_app_data():
     try:
         token = get_access_token()
         headers = {"Authorization": f"Bearer {token}"}
-        url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/{CONFIG_SHEET}!A1"
+        url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/{CONFIG_SHEET}!A:A"
         with httpx.Client(timeout=10.0) as client:
             resp = client.get(url, headers=headers)
             if resp.status_code == 200:
                 rows = resp.json().get('values', [])
-                if rows and rows[0]:
-                    data = json.loads(rows[0][0])
-                    # Merge with defaults
-                    for k, v in defaults.items():
-                        if k not in data: data[k] = v
-                    return data
+                if rows:
+                    json_str = "".join([r[0] for r in rows if r])
+                    if json_str:
+                        data = json.loads(json_str)
+                        # Merge with defaults
+                        for k, v in defaults.items():
+                            if k not in data: data[k] = v
+                        return data
             else:
                 print(f"DEBUG: load_app_data fallo: {resp.status_code} - {resp.text}")
     except Exception as e:
@@ -227,10 +229,20 @@ def save_app_data(data):
         token = get_access_token()
         headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
         json_str = json.dumps(data, ensure_ascii=False)
+        
+        # Google Sheets tiene un límite de 50.000 caracteres por celda.
+        # Partimos el JSON en trozos de 40.000 y lo guardamos en filas sucesivas.
+        chunk_size = 40000
+        chunks = [json_str[i:i+chunk_size] for i in range(0, len(json_str), chunk_size)]
+        values = [[c] for c in chunks]
+        
+        # Importante: primero limpiamos la columna A para evitar restos de un JSON anterior más largo
+        clear_url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/{CONFIG_SHEET}!A:A:clear"
         update_url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/{CONFIG_SHEET}!A1?valueInputOption=RAW"
-        update_body = {"values": [[json_str]]}
+        update_body = {"values": values}
         
         with httpx.Client() as client:
+            client.post(clear_url, headers=headers, json={}) # Limpiar columna
             resp = client.put(update_url, headers=headers, json=update_body)
             if resp.status_code != 200:
                 # Si falla, intentamos crear la pestaña
@@ -984,10 +996,16 @@ async def sync_from_sheets():
             else:
                 print(f"DEBUG: Error leyendo {name}: {r.status_code} - {r.text}")
         
-        # 2. Guardar en Google Sheets de forma asíncrona
+        # 2. Guardar en Google Sheets de forma asíncrona (con chunking para evitar límite de 50k caracteres)
         data = load_app_data()
         data['notas'] = all_notas
         json_str = json.dumps(data, ensure_ascii=False)
+        
+        chunk_size = 40000
+        chunks = [json_str[i:i+chunk_size] for i in range(0, len(json_str), chunk_size)]
+        values = [[c] for c in chunks]
+        
+        clear_url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/{CONFIG_SHEET}!A:A:clear"
         update_url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/{CONFIG_SHEET}!A1?valueInputOption=RAW"
         
         # Aseguramos que la pestaña existe antes de guardar
@@ -995,7 +1013,8 @@ async def sync_from_sheets():
         create_body = {"requests": [{"addSheet": {"properties": {"title": CONFIG_SHEET}}}]}
         await client.post(create_url, headers=headers, json=create_body) # Si ya existe dará error 400, no pasa nada
         
-        save_resp = await client.put(update_url, headers=headers, json={"values": [[json_str]]})
+        await client.post(clear_url, headers=headers, json={}) # Limpiar
+        save_resp = await client.put(update_url, headers=headers, json={"values": values})
         if save_resp.status_code != 200:
             print(f"DEBUG: Error guardando: {save_resp.status_code} - {save_resp.text}")
         else:
