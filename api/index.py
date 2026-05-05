@@ -337,6 +337,8 @@ async def main_api(request: Request, action: Optional[str] = Query(None)):
             return save_web_config(body)
         elif action == 'get_sheets':
             return await get_sheets()
+        elif action == 'sync_data' or action == 'sync_from_sheets':
+            return await sync_from_sheets()
         elif action == 'get_historical_marks':
             return get_historical_marks()
         elif action == 'get_summary':
@@ -936,6 +938,41 @@ async def get_cursos():
         'web_config': data.get('web_config', {}),
         'cursos': cursos
     })
+
+async def sync_from_sheets():
+    # 1. Obtener todos los cursos (pestañas)
+    token = get_access_token()
+    headers = {"Authorization": f"Bearer {token}"}
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}?fields=sheets.properties(title)", headers=headers)
+        if resp.status_code != 200: return JSONResponse(status_code=resp.status_code, content={"error": "Error Google"})
+        sheets = resp.json().get('sheets', [])
+    
+    ignore = [r'vacio', r'plantilla', r'config', r'asistencias', r'notas', r'backup']
+    data = load_app_data()
+    all_notas = []
+    
+    # 2. Leer cada pestaña y extraer alumnos
+    for sh in sheets:
+        name = sh['properties']['title']
+        if any(re.search(p, name, re.IGNORECASE) for p in ignore): continue
+        
+        async with httpx.AsyncClient() as client:
+            url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/'{name}'!A:Z"
+            r = await client.get(url, headers=headers)
+            if r.status_code == 200:
+                values = r.json().get('values', [])
+                # La lógica para extraer notas del Excel es compleja, pero aquí traemos lo básico
+                for row in values[1:]: # Saltar cabecera
+                    if len(row) > 2 and row[2]: # Si hay nombre de alumno
+                        # Aseguramos que el nombre del curso esté en la fila (columna 11)
+                        while len(row) < 12: row.append("")
+                        row[11] = name
+                        all_notas.append(row)
+    
+    data['notas'] = all_notas
+    save_app_data(data)
+    return ok_response({'message': f'Sincronizados {len(all_notas)} alumnos de {len(sheets)} cursos'})
 
 async def get_portal_init():
     # Obtener cursos de Google Sheets
