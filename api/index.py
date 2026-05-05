@@ -8,7 +8,9 @@ import re
 from datetime import datetime
 from typing import Optional, List, Dict, Any, Union
 from fastapi import FastAPI, Request, HTTPException, Query, Body
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse, Response, FileResponse
+from fastapi.staticfiles import StaticFiles
+import os
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
 from google.oauth2 import service_account
@@ -263,14 +265,6 @@ def ok_response(body: Any):
         body['success'] = True
     return JSONResponse(content=body)
 
-@app.get("/")
-async def read_index():
-    try:
-        with open('index.html', 'r', encoding='utf-8') as f:
-            content = f.read()
-        return Response(content=content, media_type="text/html")
-    except:
-        return JSONResponse(status_code=404, content={"error": "index.html not found"})
 
 @app.get("/api")
 @app.post("/api")
