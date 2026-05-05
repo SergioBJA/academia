@@ -962,12 +962,16 @@ async def sync_from_sheets():
             r = await client.get(url, headers=headers)
             if r.status_code == 200:
                 values = r.json().get('values', [])
-                # La lógica para extraer notas del Excel es compleja, pero aquí traemos lo básico
+                if not values: continue
+                
+                # Buscar en qué columna están los alumnos (por si no es la 2)
+                student_col = find_student_column(values[0])
+                
                 for row in values[1:]: # Saltar cabecera
-                    if len(row) > 2 and row[2]: # Si hay nombre de alumno
-                        # Aseguramos que el nombre del curso esté en la fila (columna 11)
-                        while len(row) < 12: row.append("")
-                        row[11] = name
+                    if len(row) > student_col and row[student_col]: # Si hay nombre de alumno
+                        # Aseguramos que la fila tenga suficiente longitud
+                        while len(row) < 15: row.append("")
+                        row[11] = name # Guardamos el nombre del curso
                         all_notas.append(row)
     
     data['notas'] = all_notas
