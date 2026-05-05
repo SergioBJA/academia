@@ -901,8 +901,19 @@ def get_backup_info():
     return ok_response({'diaria': [], 'semanal': [], 'trimestral': []})
 
 async def get_sheets():
-    meta_url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}?fields=sheets.properties(title)"
-    meta = await sheets_request(meta_url)
+    # Get sheet list
+    token = get_access_token()
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(
+            f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}?fields=sheets.properties",
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        
+        if resp.status_code != 200:
+            print(f"DEBUG: Google Sheets Error: {resp.status_code} - {resp.text}")
+            return JSONResponse(status_code=resp.status_code, content={"error": "Google Sheets API Error", "details": resp.json()})
+            
+        meta = resp.json()
     ignore_patterns = [r'vacio', r'plantilla', r'config', r'asistencias', r'notas']
     sheets = []
     for sh in meta.get('sheets', []):
