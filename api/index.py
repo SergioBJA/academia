@@ -1077,26 +1077,28 @@ async def get_icon(params):
 
 @app.get("/{file_path:path}")
 async def serve_static(file_path: str):
-    # Si la ruta está vacía o es /, servir index.html
-    if not file_path or file_path == "/":
-        file_path = "index.html"
+    # Limpiar la ruta y manejar la raíz
+    clean_path = file_path.strip("/")
+    if not clean_path:
+        clean_path = "index.html"
     
     # Evitar que se descargue el archivo de datos o el código
-    if "app_data.json" in file_path or "requirements.txt" in file_path or "vercel.json" in file_path:
+    if any(secret in clean_path for secret in ["app_data.json", "requirements.txt", "vercel.json"]):
         return JSONResponse(status_code=403, content={"error": "Access denied"})
     
     # Probar varias rutas posibles
-    # 1. En la raíz del proyecto
-    # 2. En la raíz absoluta del sistema de Vercel (/var/task)
-    possible_paths = [
-        file_path,
-        os.path.join(os.getcwd(), file_path),
-        os.path.join("/var/task", file_path)
-    ]
+    search_paths = [clean_path]
     
-    for p in possible_paths:
-        if os.path.exists(p) and os.path.isfile(p):
-            return FileResponse(p)
+    # Si no tiene extensión, podría ser una carpeta: probar con /index.html
+    if "." not in os.path.basename(clean_path):
+        search_paths.append(os.path.join(clean_path, "index.html"))
+
+    # Intentar encontrar el archivo en la raíz o en /var/task
+    for base in [os.getcwd(), "/var/task"]:
+        for s_path in search_paths:
+            full_path = os.path.join(base, s_path)
+            if os.path.exists(full_path) and os.path.isfile(full_path):
+                return FileResponse(full_path)
     
     return JSONResponse(status_code=404, content={"error": f"File {file_path} not found"})
 
