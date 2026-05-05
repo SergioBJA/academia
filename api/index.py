@@ -263,6 +263,15 @@ def ok_response(body: Any):
         body['success'] = True
     return JSONResponse(content=body)
 
+@app.get("/")
+async def read_index():
+    try:
+        with open('index.html', 'r', encoding='utf-8') as f:
+            content = f.read()
+        return Response(content=content, media_type="text/html")
+    except:
+        return JSONResponse(status_code=404, content={"error": "index.html not found"})
+
 @app.get("/api")
 @app.post("/api")
 async def main_api(request: Request, action: Optional[str] = Query(None)):
