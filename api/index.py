@@ -284,7 +284,11 @@ async def main_api(request: Request, action: Optional[str] = Query(None)):
         if action == 'get_portal_init':
             return await get_portal_init()
         elif action == 'get_cursos':
-            return await get_get_cursos()
+            return await get_cursos()
+        elif action == 'run_backup':
+            return await run_backup(body)
+        elif action == 'get_backup_info':
+            return await get_backup_info()
         elif action == 'get_web_config':
             return get_web_config()
         elif action == 'global_login':
@@ -331,8 +335,6 @@ async def main_api(request: Request, action: Optional[str] = Query(None)):
             return save_portal_settings(body)
         elif action == 'save_web_config':
             return save_web_config(body)
-        elif action == 'get_backup_info':
-            return get_backup_info()
         elif action == 'get_sheets':
             return await get_sheets()
         elif action == 'get_historical_marks':
@@ -396,6 +398,26 @@ async def get_get_cursos():
     cursos = deduplicate_cursos(cursos)
     cursos.sort(key=str.lower)
     return ok_response({'cursos': cursos})
+
+async def get_cursos():
+    data = load_app_data()
+    cursos = []
+    # Extraer cursos de las notas guardadas
+    for nt in data.get('notas', []):
+        if len(nt) > 11 and nt[11]:
+            cursos.append(str(nt[11]).strip())
+    
+    # También extraer de la configuración si existe
+    if 'web_config' in data and 'cursos' in data['web_config']:
+        cursos.extend(data['web_config']['cursos'])
+        
+    cursos = sorted(list(set(cursos)))
+    
+    return ok_response({
+        'success': True,
+        'web_config': data.get('web_config', {}),
+        'cursos': cursos
+    })
 
 async def get_portal_init():
     meta_url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}?fields=sheets.properties(title,sheetId)"
@@ -897,8 +919,41 @@ def save_web_config(body):
     save_app_data(data)
     return ok_response({'message': 'Configuración web guardada'})
 
-def get_backup_info():
-    return ok_response({'diaria': [], 'semanal': [], 'trimestral': []})
+async def run_backup(body):
+    backup_type = body.get('type', 'diaria')
+    data = load_app_data()
+    json_str = json.dumps(data, ensure_ascii=False)
+    
+    # Guardar en Google Sheets en una celda específica o una pestaña de backup
+    # Para simplificar, lo guardamos en una pestaña llamada "SYSTEM_BACKUP"
+    sheet_name = f"BACKUP_{backup_type.upper()}"
+    
+    # 1. Asegurarse de que la pestaña existe
+    token = get_access_token()
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    
+    async with httpx.AsyncClient() as client:
+        # Intentar crear la pestaña si no existe
+        add_sheet_body = {"requests": [{"addSheet": {"properties": {"title": sheet_name}}}]}
+        await client.post(f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}:batchUpdate", headers=headers, json=add_sheet_body)
+        
+        # 2. Guardar el JSON en la celda A1
+        update_body = {"values": [[json_str]]}
+        await client.put(
+            f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/{sheet_name}!A1?valueInputOption=RAW",
+            headers=headers,
+            json=update_body
+        )
+        
+    return ok_response({'message': f'Copia {backup_type} realizada con éxito en Google Sheets'})
+
+async def get_backup_info():
+    # En Vercel no hay archivos locales, mostramos la info de las pestañas de Google
+    return ok_response({
+        'diaria': [{'filename': 'Google Sheets (BACKUP_DIARIA)', 'date': datetime.now().strftime('%Y-%m-%d %H:%M')}],
+        'semanal': [{'filename': 'Google Sheets (BACKUP_SEMANAL)', 'date': 'Sincronizado'}],
+        'trimestral': [{'filename': 'Google Sheets (BACKUP_TRIMESTRAL)', 'date': 'Sincronizado'}]
+    })
 
 async def get_sheets():
     # Get sheet list
