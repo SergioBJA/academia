@@ -58,11 +58,12 @@ def is_student(name):
     
     return True
 
-def find_student_column(row):
-    for idx, cell in enumerate(row):
-        if cell and 'ALUMNO' in str(cell).upper():
-            return idx
-    return 2
+def find_student_start(rows):
+    for r_idx, row in enumerate(rows[:10]):
+        for c_idx, cell in enumerate(row):
+            if cell and isinstance(cell, str) and re.search(r'ALUMNO|NOMBRE', str(cell).upper()):
+                return c_idx, r_idx + 1
+    return 2, 6
 
 def index_to_letter(i):
     l = ''
@@ -984,9 +985,9 @@ async def sync_from_sheets():
                     print(f"DEBUG: Pestaña {name} está vacía.")
                     continue
                 
-                col = find_student_column(rows[0])
+                col, start_row = find_student_start(rows)
                 count = 0
-                for row in rows[1:]:
+                for row in rows[start_row:]:
                     if len(row) > col and row[col] and len(str(row[col]).strip()) > 2:
                         while len(row) < 15: row.append("")
                         row[11] = name
@@ -1204,8 +1205,8 @@ async def get_summary(params):
         if d['dateStr'] not in summary_by_month[m]['dates']:
             summary_by_month[m]['dates'].append(d['dateStr'])
             
-    student_col = find_student_column(rows[4] if len(rows) > 4 else rows[5])
-    for i in range(6, len(rows)):
+    student_col, start_row = find_student_start(rows)
+    for i in range(start_row, len(rows)):
         s_name = rows[i][student_col] if len(rows[i]) > student_col else ''
         if not is_student(s_name): continue
         clean_name = s_name.strip()
