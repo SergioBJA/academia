@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+google-auth
+httpx
+python-multipart
+python-dateutil

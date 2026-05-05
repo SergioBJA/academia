@@ -1,0 +1,1094 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notas de Idiomas | Academia Admin</title>
+    <link rel="icon" type="image/png" href="../img/logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            blue: '#163675', /* Corrected brand blue */
+                            red: '#cc0000',  /* Corrected brand red */
+                            gray: '#64748b'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../theme-manager.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="../auth-guard.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
+    <script src="../google-auth-central.js?v=8"></script>
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="style.css">
+    <!-- FORCE NO CACHE SO USER SEES CHANGES IMMEDIATELY -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <script src="app.js?v=V_NOTAS_23"></script>
+</head>
+
+<body class="bg-slate-50 dark:bg-slate-950 min-h-screen text-slate-900 dark:text-slate-100 px-6 sm:px-16 md:px-24 lg:px-32 xl:px-40 py-8 transition-colors duration-500" x-data="notasAppV5()" x-init="init()">
+
+    <!-- Pantalla de desconexión visible -->
+    <div x-show="isLoggedOut" x-transition
+         class="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center gap-6 p-8">
+        <img src="../img/logo.png" alt="Logo" class="h-16 object-contain mb-2">
+        <div class="text-center">
+            <h2 class="text-2xl font-black text-brand-blue mb-2">Cuenta Desconectada</h2>
+            <p class="text-slate-500 text-sm max-w-xs">Has desvinculado tu cuenta de Google correctamente. Para acceder de nuevo, conecta tu cuenta.</p>
+        </div>
+        <div class="mt-2 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-center max-w-xs">
+            <p class="text-amber-800 text-xs font-bold uppercase tracking-widest mb-1">⚠️ Sesión cerrada</p>
+            <p class="text-amber-700 text-xs">Los datos no son accesibles hasta volver a iniciar sesión con Google.</p>
+        </div>
+        <button @click="isGoogleConnected = false; isLoggedOut = false; connectGoogle()"
+                class="flex items-center gap-3 px-8 py-4 bg-brand-blue text-white font-black rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all text-sm uppercase tracking-widest">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"/>
+            </svg>
+            Volver a conectar con Google
+        </button>
+        <button @click="isLoggedOut = false; location.reload()"
+                class="text-slate-400 hover:text-slate-600 text-xs font-bold uppercase tracking-widest transition-colors">
+            Recargar página
+        </button>
+    </div>
+
+    <nav class="sticky top-0 z-50 px-6 py-4 mb-8 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-white/10 shadow-sm transition-all">
+        <div class="max-w-[2000px] mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <a href="../index.html" class="p-2 hover:bg-slate-100 rounded-xl transition-colors">
+                    <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                </a>
+                <img src="../img/logo.png" alt="Logo Academia"
+                    class="h-10 object-contain ml-2">
+                <h1 class="text-xl font-bold tracking-tight dark:text-slate-100">Notas de Idiomas</h1>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <!-- Statistics Link -->
+                <a href="../Estadisticas/" class="h-10 px-4 flex items-center gap-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md hover:bg-slate-50 transition-all no-print">
+                    <svg class="w-5 h-5 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">Estadísticas</span>
+                </a>
+
+                <!-- Theme Toggle Button -->
+                <button @click="toggleTheme()" class="w-10 h-10 flex items-center justify-center bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md transition-all no-print">
+                    <!-- Sun Icon (Show in Dark Mode) -->
+                    <svg x-show="isDarkMode" class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.364 17.636l-.707.707M17.636 17.636l.707.707M6.364 6.364l.707.707M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <!-- Moon Icon (Show in Light Mode) -->
+                    <svg x-show="!isDarkMode" class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                </button>
+
+                <div x-show="isGoogleConnected"
+                    class="w-fit inline-flex items-center bg-white rounded-full border border-slate-200 shadow-sm overflow-hidden no-print">
+                    <div
+                        class="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 text-[9px] font-black uppercase tracking-widest border-r border-slate-100">
+                        <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                        Sincronizado
+                    </div>
+                    <button @click="logout()"
+                        class="flex items-center gap-2 px-4 py-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all text-[9px] font-black uppercase tracking-widest group">
+                        Salir
+                        <svg class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                            </path>
+                        </svg>
+                    </button>
+                </div>
+                <!-- Botón Conectar (Si está desconectado) -->
+                <button @click="connectGoogle()" x-show="!isGoogleConnected"
+                    class="group flex items-center justify-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-2xl text-[10px] font-black hover:border-brand-blue hover:shadow-md transition-all duration-300 no-print">
+                    <div class="w-5 h-5 flex items-center justify-center bg-slate-50 rounded p-0.5 group-hover:bg-brand-blue/10 transition-colors">
+                        <svg viewBox="0 0 24 24" class="w-full h-full">
+                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                        </svg>
+                    </div>
+                    <span class="text-slate-700 uppercase tracking-tight">Conectar Google</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-[2000px] mx-auto pb-20">
+        <!-- Tabs -->
+        <div class="flex p-1 bg-slate-200/50 dark:bg-slate-800/80 border dark:border-slate-700/50 rounded-2xl w-fit mb-8 overflow-x-auto whitespace-nowrap scrollbar-hide">
+            <button @click="activeTab = 'admin'; selectedGrado = 'TODOS'; searchContacts()"
+                :class="activeTab === 'admin' ? 'bg-white dark:bg-slate-700 shadow-sm text-brand-blue dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'"
+                class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all">Panel Admin</button>
+            <button @click="activeTab = 'cursos'; selectedGrado = 'TODOS'"
+                :class="activeTab === 'cursos' ? 'bg-white dark:bg-slate-700 shadow-sm text-brand-blue dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'"
+                class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all">Por Cursos</button>
+            <button @click="activeTab = 'informes'"
+                :class="activeTab === 'informes' ? 'bg-white dark:bg-slate-700 shadow-sm text-brand-blue dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'"
+                class="px-6 py-2.5 rounded-xl text-sm font-bold transition-all">Informes</button>
+        </div>
+
+        <!-- Vista Admin (Global) y Vista por Cursos -->
+        <div x-show="activeTab === 'admin' || activeTab === 'cursos'" x-transition>
+
+            <!-- Selector de Curso Estilo Menú (Solo en pestaña Cursos y sin grado seleccionado) -->
+            <div x-show="activeTab === 'cursos' && selectedGrado === 'TODOS'" class="space-y-6 animate-in">
+                <div class="text-center mb-10">
+                    <h2 class="text-3xl font-black text-slate-800 dark:text-white">Menú de Cursos</h2>
+                    <p class="text-slate-500 dark:text-slate-400">Selecciona un grado académico para gestionar sus alumnos y notas.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <template x-for="grado in cursosEscolares" :key="grado">
+                        <button @click="selectCourse(grado)"
+                            class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-slate-200 dark:border-white/10 shadow-lg dark:shadow-none p-8 rounded-[2.5rem] text-center hover:scale-105 transition-all group border-b-8 hover:border-brand-blue">
+                            <div
+                                class="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-brand-blue group-hover:bg-brand-blue group-hover:text-white transition-colors overflow-hidden relative">
+                                <img :src="sheetMeta[grado]?.icon" 
+                                     @error="$el.style.display='none'; $el.nextElementSibling.style.display='block'" 
+                                     @load="$el.style.display='block'; $el.nextElementSibling.style.display='none'"
+                                     class="w-full h-full object-cover absolute inset-0 bg-white" style="display: none;" alt="Icono Curso">
+                                <svg class="w-8 h-8 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5S19.832 5.477 21 6.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-black text-slate-700 dark:text-slate-200" x-text="grado"></h3>
+                            <p class="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">Acceder al
+                                Curso</p>
+                        </button>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Interfaz de Gestión (Activa en Global o cuando hay curso en la otra pestaña) -->
+            <div x-show="activeTab === 'admin' || (activeTab === 'cursos' && selectedGrado !== 'TODOS')"
+                class="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in">
+                <!-- Sidebar: Buscador Alumnos -->
+                <div class="lg:col-span-4 space-y-6">
+                    <div class="bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-white/10 shadow-lg dark:shadow-none p-6 rounded-3xl transition-all">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-lg font-bold flex items-center gap-2">
+                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                                    </path>
+                                </svg>
+                                Alumnos
+                            </h2>
+                        </div>
+
+                        <div x-show="activeTab === 'cursos'"
+                            class="mb-4 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-2xl border border-blue-100 dark:border-blue-800/30 group">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-[9px] font-black text-blue-400 dark:text-blue-300 uppercase tracking-widest leading-none mb-1">Curso Activo</p>
+                                    <p class="text-[15px] font-black text-blue-900 dark:text-blue-100 truncate" x-text="selectedGrado"></p>
+                                    <template x-if="selectedProfessor">
+                                        <p class="text-[10px] font-bold text-brand-blue/60 uppercase tracking-tight mt-0.5 truncate" x-text="'Prof: ' + selectedProfessor"></p>
+                                    </template>
+                                </div>
+                                <div class="flex items-center gap-2 shrink-0">
+
+                                    <button
+                                        @click="selectedGrado = 'TODOS'; selectedStudent = null; courseStudents = []; courseStudentsMerged = []; searchQuery=''; searchContacts()"
+                                        class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all shadow-sm border border-blue-200">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7m0 0l7-7m-7 7h18"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div x-show="activeTab === 'admin'" class="mb-6">
+                            <h2 class="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2 mb-1">
+                                <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                                    </path>
+                                </svg>
+                                Gestión Global
+                            </h2>
+                            <p class="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tighter">Buscador de todos los
+                                alumnos</p>
+                        </div>
+
+                        <input type="text" x-model="searchQuery" @input="debounceSearch()" placeholder="Buscar alumno..."
+                            class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-brand-blue outline-none transition-all font-medium dark:text-slate-100">
+
+            <div class="mt-4 space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
+                            <template x-for="contact in filteredContacts" :key="contact.renderId || contact.id">
+                                <div @click="selectStudent(contact)" role="button" tabindex="0"
+                                    :class="(selectedStudent && selectedStudent.id === contact.id ? 'bg-blue-50 dark:bg-slate-800 border-blue-200 dark:border-slate-700' : 'hover:bg-slate-50 dark:hover:bg-slate-800/80 border-transparent dark:border-transparent') + (contact.isAnulado ? ' bg-slate-50 dark:bg-slate-800/30' : '')"
+                                    class="w-full text-left p-2.5 rounded-xl border transition-all flex items-center gap-2 group relative cursor-pointer outline-none focus:ring-2 focus:ring-brand-blue/20">
+                                    
+                                    <!-- Toggle Anulado (Left) -->
+                                    <div @click.stop="toggleAnulado(contact, $event)" title="Alta / Baja de Alumno"
+                                        class="w-6 h-6 flex items-center justify-center shrink-0 rounded border border-slate-200 bg-white hover:bg-slate-100 transition-colors"
+                                        :class="contact.isAnulado ? 'bg-slate-300 border-slate-400' : ''">
+                                        <input type="checkbox" :checked="contact.isAnulado" class="w-3.5 h-3.5 rounded text-slate-800 focus:ring-slate-500 pointer-events-none">
+                                    </div>
+
+                                    <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold transition-colors shrink-0 text-xs"
+                                        :class="contact.isAnulado ? 'bg-slate-300 text-slate-600' : 'bg-slate-200 text-slate-500 group-hover:bg-blue-100 group-hover:text-brand-blue'"
+                                        x-text="contact.name.charAt(0)"></div>
+                                    
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-bold text-[13px] text-slate-900 dark:text-slate-100 break-words" x-text="contact.name"></div>
+                                        <div class="flex flex-wrap items-center gap-1.5 mt-0.5 opacity-80">
+                                            <span class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-tighter" x-text="contact.course"></span>
+                                            <template x-if="contact.professor">
+                                                <div class="flex items-center gap-1.5">
+                                                    <span class="w-1 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></span>
+                                                    <span class="text-[10px] font-bold text-blue-500 dark:text-blue-400 uppercase tracking-tighter" x-text="contact.professor"></span>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+
+                                    <!-- Trimester Tracking (Right) -->
+                                    <div x-show="activeTab === 'cursos' && !isExamGrade(contact.course)" 
+                                        class="flex items-center gap-1 shrink-0 ml-auto relative z-10"
+                                        @click.stop="">
+                                        <!-- 1T -->
+                                        <button @click.stop.prevent="toggleTrimesterCheck(contact.id, 1)" 
+                                            type="button"
+                                            class="w-8 h-8 rounded-lg border flex flex-col items-center justify-center transition-all pointer-events-auto cursor-pointer"
+                                            :class="(contact.checks && contact.checks.t1) ? 'bg-emerald-500 border-emerald-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-400 hover:border-emerald-300 hover:text-emerald-500'">
+                                            <span class="text-[8px] font-black pointer-events-none">1T</span>
+                                            <div x-show="contact.checks && contact.checks.t1" class="w-1 h-1 bg-white rounded-full mt-0.5 pointer-events-none"></div>
+                                        </button>
+                                        <!-- 2T -->
+                                        <button @click.stop.prevent="toggleTrimesterCheck(contact.id, 2)" 
+                                            type="button"
+                                            class="w-8 h-8 rounded-lg border flex flex-col items-center justify-center transition-all pointer-events-auto cursor-pointer"
+                                            :class="(contact.checks && contact.checks.t2) ? 'bg-emerald-500 border-emerald-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-400 hover:border-emerald-300 hover:text-emerald-500'">
+                                            <span class="text-[8px] font-black pointer-events-none">2T</span>
+                                            <div x-show="contact.checks && contact.checks.t2" class="w-1 h-1 bg-white rounded-full mt-0.5 pointer-events-none"></div>
+                                        </button>
+                                        <!-- 3T -->
+                                        <button @click.stop.prevent="toggleTrimesterCheck(contact.id, 3)" 
+                                            type="button"
+                                            class="w-8 h-8 rounded-lg border flex flex-col items-center justify-center transition-all pointer-events-auto cursor-pointer"
+                                            :class="(contact.checks && contact.checks.t3) ? 'bg-emerald-500 border-emerald-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-400 hover:border-emerald-300 hover:text-emerald-500'">
+                                            <span class="text-[8px] font-black pointer-events-none">3T</span>
+                                            <div x-show="contact.checks && contact.checks.t3" class="w-1 h-1 bg-white rounded-full mt-0.5 pointer-events-none"></div>
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+                            <div x-show="filteredContacts.length === 0"
+                                class="p-6 text-center text-slate-400 italic text-sm">
+                                No hay alumnos en este curso o no coinciden con la búsqueda.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contenido: Notas Alumno -->
+                <div class="lg:col-span-8 space-y-8">
+                    <template x-if="!selectedStudent">
+                        <div class="bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-white/10 shadow-lg dark:shadow-none p-12 rounded-3xl text-center transition-all">
+                            <div
+                                class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6 text-blue-300">
+                                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-slate-400 dark:text-slate-200">Selecciona un alumno para gestionar sus notas
+                            </h3>
+                            <p class="text-slate-300 dark:text-slate-500 italic mt-2">Los datos se sincronizan automáticamente con Google
+                                Contacts</p>
+                        </div>
+                    </template>
+
+                    <template x-if="selectedStudent">
+                        <div class="space-y-8">
+                            <!-- Header Alumno -->
+                            <div class="bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-white/10 shadow-lg dark:shadow-none p-8 pr-12 rounded-3xl flex flex-col md:flex-row justify-between items-center gap-6 transition-all">
+                                <div class="flex items-center gap-6">
+                                    <div class="w-20 h-20 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-3xl font-black shadow-lg shadow-blue-200"
+                                        x-text="selectedStudent.name.charAt(0)"></div>
+                                    <div>
+                                        <h2 class="text-3xl font-black text-slate-900 dark:text-white" x-text="selectedStudent.name">
+                                        </h2>
+                                        <p class="text-slate-500 font-medium"
+                                            x-text="selectedStudent.email && selectedStudent.email !== 'Sin email' ? selectedStudent.email : ''">
+                                        </p>
+                                        <div class="mt-2 flex flex-wrap gap-2">
+                                            <span
+                                                class="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-black uppercase rounded-full tracking-wider">Plan
+                                                Activo</span>
+                                            <span x-show="selectedStudent.phone"
+                                                class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase rounded-full tracking-wider">📞
+                                                Con Teléfono</span>
+                                            <span x-show="!selectedStudent.phone"
+                                                class="px-2 py-0.5 bg-rose-100 text-rose-700 text-[10px] font-black uppercase rounded-full tracking-wider">🚫
+                                                Sin Teléfono</span>
+                                            <template x-if="selectedCourseName">
+                                                <div
+                                                    class="flex items-center gap-1 px-2 py-0.5 bg-slate-100 rounded-full border border-slate-200">
+                                                    <span
+                                                        class="text-[8px] font-black text-slate-400 uppercase tracking-widest">Curso:</span>
+                                                    <span class="text-[9px] font-bold text-brand-red uppercase"
+                                                        x-text="selectedCourseName"></span>
+                                                </div>
+                                            </template>
+                                            <template x-if="selectedProfessor">
+                                                <div
+                                                    class="flex items-center gap-1 px-2 py-0.5 bg-slate-100 rounded-full border border-slate-200">
+                                                    <span
+                                                        class="text-[8px] font-black text-slate-400 uppercase tracking-widest">Prof:</span>
+                                                    <span class="text-[9px] font-bold text-brand-blue uppercase"
+                                                        x-text="selectedProfessor"></span>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex gap-4 items-center">
+                                    <button @click="openAddNotaModal()"
+                                        :disabled="!selectedStudent || !selectedStudent.id"
+                                        :class="(!selectedStudent || !selectedStudent.id) ? 'opacity-50 cursor-not-allowed' : ''"
+                                        class="btn-premium bg-[#163675] text-white px-6 py-4 rounded-2xl font-black shadow-xl shadow-blue-900/20 flex items-center gap-2 hover:scale-105 transition-all">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 4v16m8-8H4"></path>
+                                        </svg>
+                                        AÑADIR NOTA
+                                    </button>
+                                    <button @click="sendWhatsApp(selectedStudent)" 
+                                        class="w-12 h-12 flex-none rounded-2xl bg-gradient-to-br from-[#25D366] to-[#128C7E] text-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg shadow-emerald-200/50 group relative overflow-hidden"
+                                        title="Enviar reporte por WhatsApp">
+                                        <div class="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                        <svg class="w-6 h-6 drop-shadow-sm" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                                        </svg>
+                                    </button>
+                                    <button @click="showPdfPreviewModal = true"
+                                        class="btn-premium bg-white border border-slate-200 text-slate-700 px-6 py-3 rounded-xl font-bold shadow-sm flex items-center gap-2 hover:bg-slate-50 hover:-translate-y-0.5 transition-all">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z">
+                                            </path>
+                                        </svg>
+                                        Imprimir PDF
+                                    </button>
+                                </div>
+                            </div>
+
+                        <div x-show="selectedCourseNote || selectedCourseVideo || selectedCourseQR" class="bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-xl border border-slate-200 dark:border-white/10 p-6 rounded-3xl mb-8 hidden shadow-inner transition-all">
+                            <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                Información del Curso
+                            </div>
+                            <div class="text-sm font-medium leading-relaxed text-slate-600" x-html="selectedCourseNote || 'No hay información adicional.'"></div>
+                            
+                                          <!-- Multimedia Row -->
+                                <div x-show="selectedCourseVideo || selectedCourseQR" class="mt-8 p-6 rounded-[2.5rem] bg-slate-50/50 border border-slate-100 flex flex-wrap items-center justify-between gap-6">
+                                    <div x-show="selectedCourseQR" class="flex items-center gap-4">
+                                        <div class="p-2 bg-white rounded-2xl shadow-sm border border-slate-100">
+                                            <img :src="`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(selectedCourseQR)}&size=100x100&color=1A365D`" class="w-16 h-16">
+                                        </div>
+                                        <div>
+                                            <p class="text-[10px] font-black text-brand-blue uppercase tracking-widest mb-0.5">Código QR</p>
+                                            <p class="text-[9px] text-slate-400 font-bold max-w-[120px] leading-tight">Escanea para acceder a materiales</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="h-10 w-px bg-slate-200 hidden md:block" x-show="selectedCourseQR && selectedCourseVideo"></div>
+
+                                    <div x-show="selectedCourseVideo" class="flex items-center gap-4">
+                                        <div class="text-right">
+                                            <p class="text-[10px] font-black text-brand-red uppercase tracking-widest mb-0.5">🎬 Vídeo del Curso</p>
+                                            <p class="text-[9px] text-slate-400 font-bold max-w-[120px] leading-tight">Pulsa en la imagen para abrir YouTube</p>
+                                        </div>
+                                        <a :href="selectedCourseVideo" target="_blank" class="block relative group">
+                                            <template x-if="getYoutubeId(selectedCourseVideo)">
+                                                <div class="relative overflow-hidden rounded-2xl border-2 border-white shadow-lg">
+                                                    <img :src="`https://img.youtube.com/vi/${getYoutubeId(selectedCourseVideo)}/mqdefault.jpg`" class="w-32 h-20 object-cover group-hover:scale-110 transition-transform duration-500">
+                                                    <div class="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                                                        <div class="w-8 h-8 bg-brand-red text-white rounded-full flex items-center justify-center shadow-lg">
+                                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                        <!-- Dashboard de Medias -->
+                            <div class="grid grid-cols-1 gap-4" :class="isExamGrade(getCurrentCourse()) ? 'md:grid-cols-4' : 'md:grid-cols-3'">
+                                <div class="glass-card p-6 rounded-3xl border border-indigo-300 shadow-sm flex flex-col justify-center" x-show="isExamGrade(getCurrentCourse())">
+                                    <div style="color: black !important; display: block !important; font-size: 11px !important; font-weight: 800 !important; margin-bottom: 8px !important; letter-spacing: 0.05em;">
+                                        <span class="uppercase">MEDIA GENERAL</span>
+                                    </div>
+                                    <div class="text-4xl font-black text-indigo-600 mb-2" x-text="calculateMediaGeneral()">0.00</div>
+                                    <div class="inline-block px-3 py-1 text-[9px] font-black rounded-lg uppercase tracking-widest shadow-sm border" :class="getAprobadoStatus().class">
+                                        <span x-text="getAprobadoStatus().text">APROBADO</span>
+                                    </div>
+                                </div>
+                                <div class="glass-card p-6 rounded-3xl border-t-4 border-slate-500">
+                                    <div
+                                        style="color: black !important; display: block !important; font-size: 14px !important; font-weight: 800 !important; margin-bottom: 8px !important;">
+                                        <span x-show="isExamGrade(getCurrentCourse())">📖 READING</span>
+                                        <span x-show="!isExamGrade(getCurrentCourse())">1º Trimestre</span>
+                                    </div>
+                                    <div class="text-3xl font-black text-slate-800"
+                                        x-text="calculateMediaSkill('reading')">--</div>
+                                    <div class="text-[10px] text-slate-500 font-bold">
+                                        <span x-show="isExamGrade(getCurrentCourse())">Últimas 3</span>
+                                        <span x-show="!isExamGrade(getCurrentCourse())">Nota Actual</span>
+                                    </div>
+                                </div>
+                                <div class="glass-card p-6 rounded-3xl border-t-4 border-orange-500">
+                                    <div
+                                        style="color: black !important; display: block !important; font-size: 14px !important; font-weight: 800 !important; margin-bottom: 8px !important;">
+                                        <span x-show="isExamGrade(getCurrentCourse())">✏️ WRITING</span>
+                                        <span x-show="!isExamGrade(getCurrentCourse())">2º Trimestre</span>
+                                    </div>
+                                    <div class="text-3xl font-black text-slate-800"
+                                        x-text="calculateMediaSkill('writing')">--</div>
+                                    <div class="text-[10px] text-slate-500 font-bold">
+                                        <span x-show="isExamGrade(getCurrentCourse())">Últimas 3</span>
+                                        <span x-show="!isExamGrade(getCurrentCourse())">Nota Actual</span>
+                                    </div>
+                                </div>
+                                <div class="glass-card p-6 rounded-3xl border-t-4 border-slate-500">
+                                    <div
+                                        style="color: black !important; display: block !important; font-size: 14px !important; font-weight: 800 !important; margin-bottom: 8px !important;">
+                                        <span x-show="isExamGrade(getCurrentCourse())">🎧 LISTENING</span>
+                                        <span x-show="!isExamGrade(getCurrentCourse())">3º Trimestre</span>
+                                    </div>
+                                    <div class="text-3xl font-black text-slate-800"
+                                        x-text="calculateMediaSkill('listening')">--</div>
+                                    <div class="text-[10px] text-slate-500 font-bold">
+                                        <span x-show="isExamGrade(getCurrentCourse())">Últimas 3</span>
+                                        <span x-show="!isExamGrade(getCurrentCourse())">Nota Actual</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Listado de Notas (Columnas por Skill) -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="capture-container">
+                                <!-- Reading Column -->
+                                <div class="space-y-4">
+                                    <div class="bg-slate-500 p-4 rounded-2xl text-white shadow-lg">
+                                        <div style="color: white !important; font-size: 14px !important; font-weight: 800 !important; display: block !important;"
+                                            class="uppercase tracking-widest">
+                                            <span x-show="isExamGrade(getCurrentCourse())">?? READING</span>
+                                            <span x-show="!isExamGrade(getCurrentCourse())">1� Trimestre</span>
+                                        </div>
+                                        <div class="flex justify-between items-end mt-2">
+                                            <span class="text-3xl font-black"
+                                                x-text="calculateMediaSkill('reading')">--</span>
+                                            <div style="color: white !important; font-size: 10px !important; font-weight: 700 !important;"
+                                                class="uppercase opacity-90">
+                                                <span x-show="isExamGrade(getCurrentCourse())">MEDIA SKILL</span>
+                                                <span x-show="!isExamGrade(getCurrentCourse())">�LTIMA NOTA</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <template x-for="nota in selectedStudentNotas.filter(n => n.reading !== '')"
+                                            :key="nota.id">
+                                            <div class="glass-card p-4 rounded-2xl hover:shadow-md transition-all relative group">
+                                                <div class="flex justify-between items-start">
+                                                    <div class="text-xs font-bold text-slate-400"
+                                                        x-text="nota.fecha_reading"></div>
+                                                    <div class="text-xl font-black text-slate-500"
+                                                        x-text="nota.reading"></div>
+                                                </div>
+                                                <div class="text-[10px] font-medium text-slate-300 mt-1 uppercase"
+                                                    x-text="nota.curso"></div>
+
+                                                <!-- Action Buttons -->
+                                                <div class="absolute -top-2 -right-2 opacity-40 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
+                                                    <button @click.stop="editNota(nota)" class="w-7 h-7 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center hover:bg-blue-500 hover:text-white shadow-sm transition-colors" title="Editar">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                                    </button>
+                                                    <button @click.stop="borrarNotaSkill(nota, 'reading')" class="w-7 h-7 bg-rose-100 text-brand-blue rounded-full flex items-center justify-center hover:bg-rose-500 hover:text-white shadow-sm transition-colors" title="Eliminar">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <!-- Writing Column -->
+                                <div class="space-y-4">
+                                    <div class="bg-[#163675] p-4 rounded-2xl text-white shadow-lg">
+                                        <div style="color: white !important; font-size: 14px !important; font-weight: 800 !important; display: block !important;"
+                                            class="uppercase tracking-widest">
+                                            <span x-show="isExamGrade(getCurrentCourse())">?? WRITING</span>
+                                            <span x-show="!isExamGrade(getCurrentCourse())">2� Trimestre</span>
+                                        </div>
+                                        <div class="flex justify-between items-end mt-2">
+                                            <span class="text-3xl font-black"
+                                                x-text="calculateMediaSkill('writing')">--</span>
+                                            <div style="color: white !important; font-size: 10px !important; font-weight: 700 !important;"
+                                                class="uppercase opacity-90">
+                                                <span x-show="isExamGrade(getCurrentCourse())">MEDIA SKILL</span>
+                                                <span x-show="!isExamGrade(getCurrentCourse())">�LTIMA NOTA</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <template x-for="nota in selectedStudentNotas.filter(n => n.writing !== '')"
+                                            :key="nota.id">
+                                            <div class="glass-card p-4 rounded-2xl hover:shadow-md transition-all relative group">
+                                                <div class="flex justify-between items-start">
+                                                    <div class="text-xs font-bold text-slate-400"
+                                                        x-text="nota.fecha_writing"></div>
+                                                    <div class="text-xl font-black text-[#163675]" x-text="nota.writing">
+                                                    </div>
+                                                </div>
+                                                <div class="text-[10px] font-medium text-slate-300 mt-1 uppercase"
+                                                    x-text="nota.curso"></div>
+
+                                                <!-- Action Buttons -->
+                                                <div class="absolute -top-2 -right-2 opacity-40 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
+                                                    <button @click.stop="editNota(nota)" class="w-7 h-7 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center hover:bg-blue-500 hover:text-white shadow-sm transition-colors" title="Editar">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                                    </button>
+                                                    <button @click.stop="borrarNotaSkill(nota, 'writing')" class="w-7 h-7 bg-rose-100 text-brand-blue rounded-full flex items-center justify-center hover:bg-rose-500 hover:text-white shadow-sm transition-colors" title="Eliminar">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <!-- Listening Column -->
+                                <div class="space-y-4">
+                                    <div class="bg-slate-600 p-4 rounded-2xl text-white shadow-lg">
+                                        <div style="color: white !important; font-size: 14px !important; font-weight: 800 !important; display: block !important;"
+                                            class="uppercase tracking-widest">
+                                            <span x-show="isExamGrade(getCurrentCourse())">?? LISTENING</span>
+                                            <span x-show="!isExamGrade(getCurrentCourse())">3� Trimestre</span>
+                                        </div>
+                                        <div class="flex justify-between items-end mt-2">
+                                            <span class="text-3xl font-black"
+                                                x-text="calculateMediaSkill('listening')">--</span>
+                                            <div style="color: white !important; font-size: 10px !important; font-weight: 700 !important;"
+                                                class="uppercase opacity-90">
+                                                <span x-show="isExamGrade(getCurrentCourse())">MEDIA SKILL</span>
+                                                <span x-show="!isExamGrade(getCurrentCourse())">�LTIMA NOTA</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <template x-for="nota in selectedStudentNotas.filter(n => n.listening !== '')"
+                                            :key="nota.id">
+                                            <div class="glass-card p-4 rounded-2xl hover:shadow-md transition-all relative group">
+                                                <div class="flex justify-between items-start">
+                                                    <div class="text-xs font-bold text-slate-400"
+                                                        x-text="nota.fecha_listening"></div>
+                                                    <div class="text-xl font-black text-slate-600"
+                                                        x-text="nota.listening"></div>
+                                                </div>
+                                                <div class="text-[10px] font-medium text-slate-300 mt-1 uppercase"
+                                                    x-text="nota.curso"></div>
+
+                                                <!-- Action Buttons -->
+                                                <div class="absolute -top-2 -right-2 opacity-40 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
+                                                    <button @click.stop="editNota(nota)" class="w-7 h-7 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center hover:bg-blue-500 hover:text-white shadow-sm transition-colors" title="Editar">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                                    </button>
+                                                    <button @click.stop="borrarNotaSkill(nota, 'listening')" class="w-7 h-7 bg-rose-100 text-brand-blue rounded-full flex items-center justify-center hover:bg-rose-500 hover:text-white shadow-sm transition-colors" title="Eliminar">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                                <!-- Teacher Notes -->
+                                <div class="mt-8 border-t border-slate-100 pt-8">
+                                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                        Notas del Profesor (Privadas)
+                                    </h4>
+                                    <textarea 
+                                        x-model="selectedStudent.note" 
+                                        @input.debounce.500ms="saveTeacherNote(selectedStudent.id, $el.value)"
+                                        placeholder="Escribe aquí anotaciones privadas sobre el alumno..."
+                                        class="w-full h-32 bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-brand-blue outline-none transition-all resize-none font-medium placeholder:text-slate-300"
+                                    ></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vista: Informes (Snapshot Historico) -->
+        <div x-show="activeTab === 'informes'" x-transition class="space-y-8 animate-in">
+            <div class="glass-card p-10 rounded-[3rem]">
+                <div class="flex items-center justify-between mb-10">
+                    <div>
+                        <h2 class="text-3xl font-black text-slate-800">Histórico de Informes</h2>
+                        <p class="text-slate-500 italic mt-1">Registros guardados tras el reseteo de cursos.</p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <button @click="getServerInfo()" class="px-4 py-2 bg-slate-100 text-slate-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all">DIAGNÓSTICO</button>
+                        <div class="w-16 h-16 bg-brand-blue/10 rounded-2xl flex items-center justify-center text-brand-blue">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-8">
+                    <template x-for="snapshot in snapshots.slice().reverse()" :key="snapshot.date">
+                        <div class="glass-card p-10 rounded-[3rem] border border-slate-100 shadow-xl hover:shadow-2xl transition-all group bg-white/50 backdrop-blur-xl">
+                            <div class="flex justify-between items-start mb-8">
+                                <div>
+                                    <p class="text-[12px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">Fecha de Archivo</p>
+                                    <p class="text-xl font-black text-slate-800" x-text="snapshot.date"></p>
+                                </div>
+                                <div class="px-6 py-2 bg-blue-100 text-brand-blue rounded-2xl text-xs font-black uppercase tracking-widest shadow-sm" x-text="snapshot.course"></div>
+                            </div>
+                            
+                            <div class="space-y-4 max-h-[500px] overflow-y-auto custom-scrollbar pr-4 mb-8">
+                                <template x-for="student in getSnapshotStudents(snapshot)" :key="student.name + snapshot.date">
+                                    <div class="flex items-center justify-between p-5 rounded-[2rem] bg-white border border-slate-100 hover:border-brand-blue/30 transition-all shadow-sm hover:shadow-md group/item">
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-xl font-black text-slate-800 truncate" x-text="student.name || 'Alumno sin nombre'"></p>
+                                            <div class="flex items-center gap-2 mt-1">
+                                                <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                                                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest" x-text="(student.rows ? student.rows.length : 0) + ' calificaciones archivadas'"></p>
+                                            </div>
+                                        </div>
+                                        <button @click="printHistoricalStudent(snapshot, student.name)" 
+                                            style="background-color: #163675 !important;"
+                                            class="flex items-center gap-3 px-6 py-4 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg shadow-blue-900/20">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                                            </svg>
+                                            Imprimir PDF
+                                        </button>
+                                    </div>
+                                </template>
+                                <template x-if="getSnapshotStudents(snapshot).length === 0">
+                                    <div class="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                                        <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">No se detectan alumnos en este bloque</p>
+                                        <p class="text-[8px] text-slate-300 mt-2" x-text="'Debug: ' + JSON.stringify(snapshot.data).substring(0, 50)"></p>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <div class="text-xs font-black text-slate-400 italic text-center border-t border-slate-100 pt-6 uppercase tracking-widest">
+                                <span class="text-brand-blue" x-text="getSnapshotStudents(snapshot).length"></span> Alumnos en este registro
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+
+                <template x-if="snapshots.length === 0">
+                    <div class="p-20 text-center border-2 border-dashed border-slate-200 rounded-[3rem]">
+                        <p class="text-slate-400 font-bold italic">No hay informes históricos guardados todavía.</p>
+                        <p class="text-xs text-slate-300 mt-2 uppercase tracking-widest font-black">Se crean al pulsar el botón de Reset en un curso</p>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- (Vista Alumno eliminada) -->
+    </main>
+
+    <!-- Modal: Añadir Nota -->
+    <div x-show="showAddNotaModal" class="fixed inset-0 z-[100] flex items-center justify-center p-6" x-transition>
+        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" @click="showAddNotaModal = false"></div>
+        <div class="glass-card w-full max-w-lg rounded-[2.5rem] p-10 relative z-10 border border-white">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-2xl font-black tracking-tight">Nueva Calificación</h2>
+                <button @click="showAddNotaModal = false" class="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+
+            <form @submit.prevent="saveNota()" class="space-y-8">
+                <div class="flex items-center justify-between p-4 bg-blue-50/50 rounded-2xl border border-blue-100">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-black">
+                            C</div>
+                        <div>
+                            <p class="text-[8px] font-black text-blue-400 uppercase tracking-widest">Curso Activo</p>
+                            <p class="text-xs font-bold text-blue-900" x-text="selectedGrado"></p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest">Alumno</p>
+                        <p class="text-xs font-bold text-slate-700"
+                            x-text="selectedStudent ? selectedStudent.name : ''"></p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-black uppercase text-brand-red tracking-widest mb-2 ml-1"
+                            x-show="!isExamGrade(newNota.grado_academico)">1º Trimestre</label>
+                        <label class="block text-xs font-black uppercase text-brand-red tracking-widest mb-2 ml-1"
+                            x-show="isExamGrade(newNota.grado_academico)">📖 READING</label>
+                        <input type="number" x-model="newNota.reading" placeholder="Ej: 6.72" step="0.01" min="0"
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold outline-none focus:ring-2 focus:ring-brand-red">
+                    </div>
+                    <div>
+                        <label
+                            class="block text-xs font-black uppercase text-brand-red tracking-widest mb-2 ml-1">Fecha</label>
+                        <input type="date" x-model="newNota.fecha_reading"
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold outline-none focus:ring-2 focus:ring-brand-red">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-black uppercase text-brand-blue tracking-widest mb-2 ml-1"
+                            x-show="!isExamGrade(newNota.grado_academico)">2º Trimestre</label>
+                        <label class="block text-xs font-black uppercase text-brand-blue tracking-widest mb-2 ml-1"
+                            x-show="isExamGrade(newNota.grado_academico)">✏️ WRITING</label>
+                        <input type="number" x-model="newNota.writing" placeholder="Ej: 6.72" step="0.01" min="0"
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold outline-none focus:ring-2 focus:ring-brand-blue">
+                    </div>
+                    <div>
+                        <label
+                            class="block text-xs font-black uppercase text-brand-blue tracking-widest mb-2 ml-1">Fecha</label>
+                        <input type="date" x-model="newNota.fecha_writing"
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold outline-none focus:ring-2 focus:ring-rose-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-black uppercase text-slate-500 tracking-widest mb-1 ml-1"
+                            x-show="!isExamGrade(newNota.grado_academico)">3º Trimestre</label>
+                        <label class="block text-xs font-black uppercase text-slate-500 tracking-widest mb-1 ml-1"
+                            x-show="isExamGrade(newNota.grado_academico)">🎧 LISTENING</label>
+                        <input type="number" x-model="newNota.listening" placeholder="Ej: 6.72" step="0.01" min="0"
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold outline-none focus:ring-2 focus:ring-slate-500">
+                    </div>
+                    <div>
+                        <label
+                            class="block text-xs font-black uppercase text-slate-500 tracking-widest mb-2 ml-1">Fecha</label>
+                        <input type="date" x-model="newNota.fecha_listening"
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold outline-none focus:ring-2 focus:ring-slate-500">
+                    </div>
+                </div>
+
+                <button type="submit"
+                    class="w-full btn-premium bg-gradient-to-r from-[#163675] to-[#1a365d] text-white py-5 rounded-2xl font-black text-lg shadow-xl shadow-blue-900/20 transition-all hover:shadow-2xl hover:scale-[1.01] active:scale-[0.98] group">
+                    <span class="flex items-center justify-center gap-3">
+                        <svg class="w-6 h-6 group-hover:rotate-180 transition-transform duration-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h0.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        Sincronizar Datos
+                    </span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Modal de Previsualización PDF -->
+    <div x-show="showPdfPreviewModal" class="fixed inset-0 z-[100] flex items-center justify-center p-6" x-transition>
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="showPdfPreviewModal = false"></div>
+        
+        <div class="flex flex-col w-full max-w-4xl h-[90vh] bg-slate-50 relative z-10 rounded-[2rem] overflow-hidden shadow-2xl border border-white/20">
+            <!-- Header Modal -->
+            <div class="px-8 py-5 bg-white border-b border-slate-100 flex justify-between items-center shrink-0">
+                <div>
+                    <h2 class="text-xl font-black text-slate-800">Vista Previa del Informe</h2>
+                    <p class="text-xs font-bold text-slate-400 mt-0.5">Así es como se verá el documento al exportarlo</p>
+                </div>
+                <div class="flex gap-4">
+                    <button @click="showPdfPreviewModal = false" class="px-4 py-2 font-bold text-slate-500 hover:text-slate-800 transition-colors">Cancelar</button>
+                    <button id="download-pdf-btn" @click="downloadPDF(false)" 
+                        style="background-color: #cc0000 !important;"
+                        class="px-6 py-2 bg-brand-red text-white flex items-center justify-center gap-2 rounded-xl font-black shadow-lg shadow-red-200 hover:shadow-xl hover:-translate-y-0.5 transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        Descargar PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- Cuerpo Modal Scrollable -->
+            <div class="flex-1 overflow-auto p-4 md:p-8 bg-slate-200/50 flex justify-center items-start custom-scrollbar">
+                
+                <!-- Contenedor que capturará HTML2PDF (A4 exact dimensions scaled down visually with transform if needed, but flex handles overflow) -->
+                <div id="pdf-report-template" 
+                    class="w-[794px] h-[1120px] bg-white relative overflow-hidden flex flex-col font-sans"
+                    x-show="selectedStudent">
+                    
+                    <!-- Faja Decorativa Top -->
+                    <div class="h-4 w-full bg-red-700"></div>
+
+                    <!-- Cabecera Informe -->
+                    <div class="p-12 pb-6 flex justify-between items-center gap-8">
+                        <!-- Left: Portada grande del curso (o logo) -->
+                        <div class="shrink-0 w-[100px] h-[130px] border-4 border-slate-50 rounded-xl shadow-sm overflow-hidden bg-white flex items-center justify-center">
+                            <img id="pdf-course-icon" :src="sheetMeta[selectedGrado]?.icon || '../CertificadosAgenciaTributaria/logo.png'" 
+                                 @error="$el.src = '../CertificadosAgenciaTributaria/logo.png'"
+                                 class="w-full h-full object-contain">
+                        </div>
+
+                        <!-- Right: Títulos e información -->
+                        <div class="flex-1 text-right flex flex-col justify-center items-end">
+                            <h1 class="text-[32px] md:text-4xl font-black text-brand-blue uppercase tracking-tighter leading-none mb-1">INFORME DE RENDIMIENTO</h1>
+                            <p class="text-brand-red font-black uppercase tracking-widest text-[12px] mb-6" style="color: #cc0000 !important;">Academia de Idiomas Yes Of Course!</p>
+                            
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Fecha de Emisión</p>
+                                <p class="text-sm font-bold text-slate-700" x-text="new Date().toLocaleDateString('es-ES')"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Datos Estudiante -->
+                    <div class="px-12 mb-6">
+                        <div id="pdf-student-info-box" style="background-color: #163675 !important;" class="bg-brand-blue px-8 py-5 rounded-3xl text-white shadow-lg flex justify-between items-center relative overflow-hidden">
+                            <!-- Patrón decorativo -->
+                            <div class="absolute -right-10 -top-20 w-48 h-48 bg-white/5 rounded-full blur-2xl"></div>
+                            
+                            <div class="relative z-10 w-2/3">
+                                <p class="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-1">Datos del Alumno</p>
+                                <h2 id="pdf-student-name" class="text-3xl font-black text-white" x-text="selectedStudent?.name"></h2>
+                                <p id="pdf-student-email" class="text-blue-100 font-medium mt-1 text-sm" x-text="selectedStudent?.email !== 'Sin email' ? selectedStudent?.email : ''"></p>
+                            </div>
+                            <div class="relative z-10 w-1/3 text-right border-l border-white/10 pl-6">
+                                <p class="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-1">Curso y Nivel</p>
+                                <p id="pdf-selected-grado" class="text-xl font-black text-white truncate" x-text="selectedGrado"></p>
+                                <p id="pdf-course-name" class="text-xs font-bold text-blue-100 uppercase mt-1 tracking-wider truncate" x-text="selectedCourseName"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Calificaciones (Métricas) -->
+                    <div class="px-12 flex gap-6 mb-4" x-show="!isExamGrade(getCurrentCourse())">
+                        <!-- 1º Trimestre (Ahora Gris) -->
+                        <div class="flex-1 bg-slate-50 p-6 rounded-[2rem] border-t-8 border-slate-500 shadow-sm text-center">
+                            <p class="text-[12px] font-black text-slate-500 uppercase tracking-widest mb-3">
+                                <span x-show="isExamGrade(getCurrentCourse())">📖 READING</span>
+                                <span x-show="!isExamGrade(getCurrentCourse())">1º Trimestre</span>
+                            </p>
+                            <div class="text-5xl font-black text-slate-500" x-text="calculateMediaSkill('reading')"></div>
+                        </div>
+                        
+                        <!-- Writing (Azul) -->
+                        <div class="flex-1 bg-slate-50 p-6 rounded-[2rem] border-t-8 border-brand-blue shadow-sm text-center">
+                            <p class="text-[12px] font-black text-brand-blue uppercase tracking-widest mb-3">
+                                <span x-show="isExamGrade(getCurrentCourse())">✏️ WRITING</span>
+                                <span x-show="!isExamGrade(getCurrentCourse())">2º Trimestre</span>
+                            </p>
+                            <div class="text-5xl font-black text-brand-blue" x-text="calculateMediaSkill('writing')"></div>
+                        </div>
+
+                        <!-- Listening (Gris) -->
+                        <div class="flex-1 bg-slate-50 p-6 rounded-[2rem] border-t-8 border-slate-500 shadow-sm text-center">
+                            <p class="text-[12px] font-black text-slate-500 uppercase tracking-widest mb-3">
+                                <span x-show="isExamGrade(getCurrentCourse())">🎧 LISTENING</span>
+                                <span x-show="!isExamGrade(getCurrentCourse())">3º Trimestre</span>
+                            </p>
+                            <div class="text-5xl font-black text-slate-500" x-text="calculateMediaSkill('listening')"></div>
+                        </div>
+                    </div>
+
+
+                    <div id="pdf-info-note-container" class="px-12 mb-6" x-show="!isExamGrade(getCurrentCourse()) && sheetMeta[selectedGrado]?.note">
+                        <div class="p-5 rounded-[2rem] border-2 border-brand-blue/10 bg-blue-50/40">
+                            <p id="pdf-info-note-text" class="text-[15px] font-bold text-brand-blue leading-relaxed" x-html="sheetMeta[selectedGrado]?.note"></p>
+                            
+                    <!-- Multimedia (QR + Video) in PDF -->
+                    <div class="px-12 mb-6" x-show="selectedCourseVideo || selectedCourseQR">
+                        <div class="p-6 rounded-[2.5rem] bg-slate-50 border-2 border-slate-100/50 flex items-center justify-between gap-8">
+                            <!-- Left: QR Section -->
+                            <div class="flex items-center gap-4 flex-1" x-show="selectedCourseQR">
+                                <img :src="`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(selectedCourseQR)}&size=150x150&color=1A365D`" 
+                                     class="w-20 h-20 rounded-xl shadow-sm border border-white" crossorigin="anonymous">
+                                <div>
+                                    <p class="text-[10px] font-black text-brand-blue uppercase tracking-widest mb-1">Escanea el QR</p>
+                                    <p class="text-[9px] text-slate-500 font-medium leading-tight max-w-[140px]">Acceso directo a materiales adicionales desde tu móvil.</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Divider -->
+                            <div class="w-px h-12 bg-slate-200" x-show="selectedCourseVideo && selectedCourseQR"></div>
+
+                            <!-- Right: YT Thumbnail Section -->
+                            <div class="flex items-center gap-4 flex-1 justify-end text-right" x-show="selectedCourseVideo">
+                                <div>
+                                    <p class="text-[10px] font-black text-brand-red uppercase tracking-widest mb-1">🎬 Ver Vídeo</p>
+                                    <p class="text-[9px] text-slate-500 font-medium leading-tight">Pulsa en la imagen para <br> abrir en YouTube</p>
+                                </div>
+                                <a :href="selectedCourseVideo" target="_blank" class="relative block">
+                                    <img x-show="getYoutubeId(selectedCourseVideo)" 
+                                         :src="`https://img.youtube.com/vi/${getYoutubeId(selectedCourseVideo)}/mqdefault.jpg`" 
+                                         class="w-28 h-16 rounded-xl object-cover border-2 border-white shadow-md" crossorigin="anonymous">
+                                    <!-- Play Overlay Icon (Burned into capture) -->
+                                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                        <div class="w-8 h-8 bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex-1"></div> <!-- Espaciador flexible para empujar el pie -->
+
+                    <!-- Resumen Final -->
+                    <div class="px-12 mb-12" x-show="isExamGrade(getCurrentCourse())">
+                        <div class="bg-slate-100 p-10 rounded-[2.5rem] flex items-center justify-between border-2 border-slate-200">
+                            <div>
+                                <h3 class="text-2xl font-black text-slate-800 uppercase tracking-widest">MEDIA</h3>
+                                <p class="text-slate-500 font-bold text-sm mt-1">esta nota se obtiene de las tres últimas notas de cada skill</p>
+                            </div>
+                            <div class="flex items-center gap-8">
+                                <div class="text-right">
+                                    <div class="text-8xl font-black text-brand-blue" x-text="calculateMediaGeneral()"></div>
+                                    <div class="mt-1 text-slate-400 text-xs font-black uppercase tracking-widest text-right">Promedio General</div>
+                                </div>
+                                <!-- Aprobado Status in PDF -->
+                                <div class="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-lg border border-slate-100" 
+                                     :class="getAprobadoStatus().text === 'APROBADO' ? 'text-emerald-500' : 'text-rose-500'">
+                                    <template x-if="getAprobadoStatus().text === 'APROBADO'">
+                                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                    </template>
+                                    <template x-if="getAprobadoStatus().text !== 'APROBADO'">
+                                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer Documento -->
+                    <div class="mt-auto bg-slate-50 px-12 py-3 border-t border-slate-200 flex justify-between items-center text-slate-400">
+                        <p class="text-[8px] font-bold uppercase tracking-widest">Academia Yes Of Course</p>
+                        <p class="text-[8px] font-bold uppercase tracking-widest">Documento Oficial de Calificaciones</p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal Reset Password Eliminado (Ya no se usa) -->
+
+    <!-- Modal: Confirmar Eliminación de Nota -->
+    <div x-show="showDeleteModal" class="fixed inset-0 z-[200] flex items-center justify-center p-6" x-cloak x-transition>
+        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" @click="showDeleteModal = false"></div>
+        <div class="relative z-10 bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden">
+            <!-- Top accent bar -->
+            <div class="h-1.5 w-full bg-gradient-to-r from-rose-400 to-rose-600"></div>
+            <div class="px-8 pt-8 pb-6">
+                <!-- Icon -->
+                <div class="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto mb-5 border border-rose-100">
+                    <svg class="w-8 h-8 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                </div>
+                <!-- Text -->
+                <h3 class="text-xl font-black text-slate-800 text-center mb-1">Eliminar Nota</h3>
+                <p class="text-sm text-slate-500 text-center font-medium leading-relaxed">Esta acción es permanente y no se puede deshacer.</p>
+                <!-- Buttons -->
+                <div class="grid grid-cols-2 gap-3 mt-7">
+                    <button @click="showDeleteModal = false"
+                        class="w-full py-3.5 rounded-2xl bg-slate-100 text-slate-600 font-bold text-sm hover:bg-slate-200 active:scale-95 transition-all">
+                        Cancelar
+                    </button>
+                    <button @click="confirmarEliminarAction()"
+                        class="w-full py-3.5 rounded-2xl bg-gradient-to-br from-rose-500 to-rose-600 text-white font-black text-sm shadow-lg shadow-rose-200 hover:shadow-xl hover:-translate-y-0.5 active:scale-95 transition-all">
+                        Eliminar
+                    </button>
+                </div>
+            </div>
+    </div>
+
+    <!-- Overlay: Cuenta Desconectada (Session Expired) -->
+    <div x-show="isLoggedOut" 
+        class="fixed inset-0 z-[1000] bg-white flex flex-col items-center justify-center p-8 animate-in"
+        x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+        
+        <!-- Logo -->
+        <div class="mb-12">
+            <img src="https://practicasyesofcourse.com/wp-content/uploads/2024/09/Logo-Solo-Yes.png" alt="Logo Yes Of Course" class="h-20 w-auto">
+        </div>
+
+        <!-- Main Title -->
+        <h2 class="text-3xl font-black text-[#1A365D] mb-4 text-center">Cuenta Desconectada</h2>
+        <p class="text-slate-500 text-center max-w-sm mb-12 font-medium leading-relaxed">
+            Has desvinculado tu cuenta de Google correctamente. Para acceder de nuevo, conecta tu cuenta.
+        </p>
+
+        <!-- Alert Box -->
+        <div class="w-full max-w-md bg-[#FFF9E6] border border-[#FFE088] rounded-[2rem] p-8 mb-12 text-center">
+            <div class="flex items-center justify-center gap-2 mb-2">
+                <span class="text-lg">⚠️</span>
+                <span class="text-[14px] font-black text-[#B45309] uppercase tracking-widest">Sesión Cerrada</span>
+            </div>
+            <p class="text-[#D97706] text-[14px] font-bold leading-relaxed">
+                Los datos no son accesibles hasta volver a iniciar sesión con Google.
+            </p>
+        </div>
+
+        <!-- Action Button -->
+        <button @click="connectGoogle()" 
+            class="w-full max-w-md bg-[#1A365D] text-white py-5 rounded-[1.5rem] font-black shadow-xl shadow-blue-200 hover:bg-[#152e50] active:scale-95 transition-all flex items-center justify-center gap-3 text-sm uppercase tracking-widest">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.9 3.32-2.24 4.16-1.52 1.04-3.52 1.6-6 1.6-4.32 0-8-3.12-8-7.92s3.68-7.92 8-7.92c2.32 0 4.24.8 5.68 2.16l2.32-2.32C17.04 1.84 14.88 1.04 12.48 1.04c-6.24 0-11.28 5.04-11.28 11.28s5.04 11.28 11.28 11.28c3.28 0 6.08-1.04 8.24-3.12 2.16-2.16 3.04-5.2 3.04-7.84 0-.56-.08-1.12-.16-1.68h-11.12z"/></svg>
+            Volver a Conectar con Google
+        </button>
+
+        <!-- Footer Link -->
+        <button @click="window.location.reload()" 
+            class="mt-10 text-[12px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors">
+            Recargar Página
+        </button>
+    </div>
+
+    <!-- Toast / Notification container can be added here -->
+</body>
+
+</html>
