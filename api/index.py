@@ -921,6 +921,12 @@ def save_web_config(body):
 
 async def get_cursos():
     data = load_app_data()
+    
+    if not data.get('notas'):
+        print("DEBUG: 'notas' vacías en get_cursos. Lanzando sincronización automática...")
+        await sync_from_sheets()
+        data = load_app_data()
+        
     cursos = []
     # De las notas
     for nt in data.get('notas', []):
@@ -996,6 +1002,60 @@ async def sync_from_sheets():
             print("DEBUG: Guardado exitoso en SYSTEM_CONFIG")
             
     return ok_response({'message': f'Sincronizados {len(all_notas)} alumnos correctamente. Revisa los logs en Vercel.'})
+
+def get_notas(params):
+    curso = params.get('curso')
+    data = load_app_data()
+    notas = data.get('notas', [])
+    if curso:
+        import urllib.parse
+        curso_decoded = urllib.parse.unquote(curso)
+        notas = [n for n in notas if len(n) > 11 and n[11] == curso_decoded]
+    return ok_response({'notas': notas})
+
+def get_all_notas():
+    data = load_app_data()
+    return ok_response({'notas': data.get('notas', [])})
+
+def add_nota(body):
+    data = load_app_data()
+    if 'notas' not in data: data['notas'] = []
+    data['notas'].append(body.get('nota', []))
+    save_app_data(data)
+    return ok_response({'message': 'Nota añadida'})
+
+def edit_nota(body):
+    data = load_app_data()
+    index = body.get('index')
+    if index is not None and 0 <= index < len(data['notas']):
+        data['notas'][index] = body.get('nota', [])
+        save_app_data(data)
+        return ok_response({'message': 'Nota editada'})
+    return JSONResponse(status_code=400, content={"error": "Índice inválido"})
+
+def delete_nota(body):
+    data = load_app_data()
+    index = body.get('index')
+    if index is not None and 0 <= index < len(data['notas']):
+        data['notas'].pop(index)
+        save_app_data(data)
+        return ok_response({'message': 'Nota eliminada'})
+    return JSONResponse(status_code=400, content={"error": "Índice inválido"})
+
+def toggle_anulado(body):
+    data = load_app_data()
+    if 'anulados' not in data: data['anulados'] = []
+    
+    nota = body.get('nota', [])
+    if len(nota) > 2:
+        name = str(nota[2]).strip()
+        if name in data['anulados']:
+            data['anulados'].remove(name)
+        else:
+            data['anulados'].append(name)
+        save_app_data(data)
+        return ok_response({'message': 'Estado de anulación cambiado', 'anulados': data['anulados']})
+    return JSONResponse(status_code=400, content={"error": "Nota inválida"})
 
 async def get_portal_init():
     # Obtener cursos de Google Sheets
