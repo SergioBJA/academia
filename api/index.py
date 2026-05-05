@@ -1075,6 +1075,31 @@ async def get_icon(params):
         
     return Response(status_code=400)
 
+@app.get("/{file_path:path}")
+async def serve_static(file_path: str):
+    # Si la ruta está vacía o es /, servir index.html
+    if not file_path or file_path == "/":
+        file_path = "index.html"
+    
+    # Evitar que se descargue el archivo de datos o el código
+    if "app_data.json" in file_path or "requirements.txt" in file_path or "vercel.json" in file_path:
+        return JSONResponse(status_code=403, content={"error": "Access denied"})
+    
+    # Probar varias rutas posibles
+    # 1. En la raíz del proyecto
+    # 2. En la raíz absoluta del sistema de Vercel (/var/task)
+    possible_paths = [
+        file_path,
+        os.path.join(os.getcwd(), file_path),
+        os.path.join("/var/task", file_path)
+    ]
+    
+    for p in possible_paths:
+        if os.path.exists(p) and os.path.isfile(p):
+            return FileResponse(p)
+    
+    return JSONResponse(status_code=404, content={"error": f"File {file_path} not found"})
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
