@@ -936,63 +936,51 @@ async def get_cursos():
     })
 
 async def sync_from_sheets():
-    print("DEBUG: Iniciando sincronización completa...")
+    print("DEBUG: Iniciando sincronización...")
     token = get_access_token()
     headers = {"Authorization": f"Bearer {token}"}
     
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=60.0) as client:
         # 1. Obtener pestañas
         resp = await client.get(f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}?fields=sheets.properties(title)", headers=headers)
-        if resp.status_code != 200:
-            print(f"DEBUG: Error Google (Pestañas): {resp.status_code} - {resp.text}")
-            return JSONResponse(status_code=resp.status_code, content={"error": "Error Google Pestañas"})
+        if resp.status_code != 200: return JSONResponse(status_code=resp.status_code, content={"error": "Error Google Pestañas"})
         
         sheets = resp.json().get('sheets', [])
-        print(f"DEBUG: Encontradas {len(sheets)} pestañas en total.")
-
-    ignore = [r'vacio', r'plantilla', r'config', r'asistencias', r'notas', r'backup', r'system']
-    data = load_app_data()
-    all_notas = []
-    
-    # 2. Leer cada pestaña
-    for sh in sheets:
-        name = sh['properties']['title']
-        if any(re.search(p, name, re.IGNORECASE) for p in ignore):
-            print(f"DEBUG: Saltando pestaña ignorable: {name}")
-            continue
+        ignore = [r'vacio', r'plantilla', r'config', r'asistencias', r'notas', r'backup', r'system']
+        all_notas = []
         
-        print(f"DEBUG: Procesando curso: {name}...")
-        async with httpx.AsyncClient() as client:
-            # Codificar el nombre de la pestaña para la URL
-            import urllib.parse
-            encoded_name = urllib.parse.quote(name)
-            url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/'{encoded_name}'!A:Z"
-            r = await client.get(url, headers=headers)
+        for sh in sheets:
+            name = sh['properties']['title']
+            if any(re.search(p, name, re.IGNORECASE) for p in ignore): continue
             
+            # Leer datos de la pestaña
+            url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/'{name}'!A:Z"
+            r = await client.get(url, headers=headers)
             if r.status_code == 200:
-                values = r.json().get('values', [])
-                if not values:
-                    print(f"DEBUG: Pestaña {name} está vacía.")
-                    continue
+                rows = r.json().get('values', [])
+                if not rows: continue
                 
-                # Buscar columna de alumnos
-                student_col = find_student_column(values[0])
-                
-                count = 0
-                for row in values[1:]:
-                    if len(row) > student_col and row[student_col] and len(str(row[student_col]).strip()) > 2:
+                col = find_student_column(rows[0])
+                for row in rows[1:]:
+                    if len(row) > col and row[col] and len(str(row[col]).strip()) > 2:
                         while len(row) < 15: row.append("")
                         row[11] = name
                         all_notas.append(row)
-                        count += 1
-                print(f"DEBUG: Curso {name} - Sincronizados {count} alumnos.")
-            else:
-                print(f"DEBUG: Error al leer pestaña {name}: {r.status_code} - {r.text}")
-    
-    print(f"DEBUG: Sincronización terminada. Total alumnos: {len(all_notas)}")
-    data['notas'] = all_notas
-    save_app_data(data)
-    return ok_response({'message': f'Sincronización terminada: {len(all_notas)} alumnos encontrados.'})
+        
+        # 2. Guardar en Google Sheets de forma asíncrona
+        data = load_app_data()
+        data['notas'] = all_notas
+        json_str = json.dumps(data, ensure_ascii=False)
+        update_url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/{CONFIG_SHEET}!A1?valueInputOption=RAW"
+        
+        # Aseguramos que la pestaña existe antes de guardar
+        create_url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}:batchUpdate"
+        create_body = {"requests": [{"addSheet": {"properties": {"title": CONFIG_SHEET}}}]}
+        await client.post(create_url, headers=headers, json=create_body) # Si ya existe dará error 400, no pasa nada
+        
+        await client.put(update_url, headers=headers, json={"values": [[json_str]]})
+        
+    return ok_response({'message': f'Sincronizados {len(all_notas)} alumnos correctamente.'})
     
     data['notas'] = all_notas
     save_app_data(data)
