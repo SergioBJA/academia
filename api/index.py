@@ -919,6 +919,56 @@ def save_web_config(body):
     save_app_data(data)
     return ok_response({'message': 'Configuración web guardada'})
 
+async def get_cursos():
+    data = load_app_data()
+    cursos = []
+    # De las notas
+    for nt in data.get('notas', []):
+        if len(nt) > 11 and nt[11]:
+            cursos.append(str(nt[11]).strip())
+    # De la config
+    if 'web_config' in data and 'cursos' in data['web_config']:
+        cursos.extend(data['web_config']['cursos'])
+    
+    cursos = sorted(list(set(cursos)))
+    return ok_response({
+        'success': True,
+        'web_config': data.get('web_config', {}),
+        'cursos': cursos
+    })
+
+async def get_portal_init():
+    # Obtener cursos de Google Sheets
+    token = get_access_token()
+    headers = {"Authorization": f"Bearer {token}"}
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(
+            f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}?fields=sheets.properties(title)",
+            headers=headers
+        )
+        if resp.status_code != 200:
+            return JSONResponse(status_code=resp.status_code, content={"error": "Error Google", "details": resp.text})
+        meta = resp.json()
+
+    ignore = [r'vacio', r'plantilla', r'config', r'asistencias', r'notas', r'backup']
+    sheets_names = []
+    for sh in meta.get('sheets', []):
+        name = sh['properties']['title']
+        if not any(re.search(p, name, re.IGNORECASE) for p in ignore):
+            sheets_names.append(name)
+
+    data = load_app_data()
+    if not data.get('notas') and not data.get('web_config', {}).get('cursos'):
+        if 'web_config' not in data: data['web_config'] = {}
+        data['web_config']['cursos'] = sorted(sheets_names)
+        save_app_data(data)
+
+    return ok_response({
+        'success': True,
+        'web_config': data.get('web_config', {}),
+        'cursos': data.get('web_config', {}).get('cursos', sorted(sheets_names))
+    })
+
 async def run_backup(body):
     backup_type = body.get('type', 'diaria')
     data = load_app_data()
