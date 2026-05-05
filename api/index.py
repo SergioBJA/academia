@@ -308,6 +308,8 @@ async def main_api(request: Request, action: Optional[str] = Query(None)):
             return verify_portal_password(body or request.query_params)
         elif action == 'get_server_info':
             return get_server_info()
+        elif action == 'debug_data':
+            return ok_response(load_app_data())
         elif action == 'get_notas':
             return get_notas(request.query_params)
         elif action == 'get_all_notas':
@@ -1244,9 +1246,18 @@ async def get_all_students():
             
     if not ranges: return ok_response({'students': []})
     
-    query_params = "&".join([f"ranges={httpx.utils.quote(r)}" for r in ranges])
-    batch_url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values:batchGet?{query_params}"
-    batch_data = await sheets_request(batch_url)
+    token = get_access_token()
+    headers = {"Authorization": f"Bearer {token}"}
+    params = [("ranges", r) for r in ranges]
+    batch_url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values:batchGet"
+    
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        resp = await client.get(batch_url, headers=headers, params=params)
+        if resp.status_code == 200:
+            batch_data = resp.json()
+        else:
+            print(f"DEBUG: get_all_students batchGet fallo: {resp.status_code} - {resp.text}")
+            batch_data = {}
     
     all_students = []
     for i, vr in enumerate(batch_data.get('valueRanges', [])):
